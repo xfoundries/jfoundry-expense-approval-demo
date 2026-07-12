@@ -9,6 +9,9 @@ spring:
   sql:
     init:
       mode: always
+  mvc:
+    problemdetails:
+      enabled: true
 
 mybatis-plus:
   configuration:
