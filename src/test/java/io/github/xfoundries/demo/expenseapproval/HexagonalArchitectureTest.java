@@ -1,39 +1,19 @@
 package io.github.xfoundries.demo.expenseapproval;
 
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.junit.ArchTests;
 import org.jfoundry.test.archunit.JFoundryRules;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.TestFactory;
 
+@AnalyzeClasses(packages = "io.github.xfoundries.demo.expenseapproval")
 class HexagonalArchitectureTest {
 
-    private static final JavaClasses CLASSES = new ClassFileImporter()
-            .importPackages("io.github.xfoundries.demo.expenseapproval");
+    @ArchTest
+    static final ArchTests jfoundryRules = JFoundryRules.hexagonalStrict();
 
-    @TestFactory
-    Stream<DynamicTest> jfoundryRules() {
-        return tests("hexagonal", JFoundryRules.hexagonalStrict());
-    }
+    @ArchTest
+    static final ArchTests jmoleculesDddRules = JFoundryRules.jmoleculesDdd();
 
-    @TestFactory
-    Stream<DynamicTest> jmoleculesDddRules() {
-        return tests("jmolecules-ddd", JFoundryRules.jmoleculesDdd());
-    }
-
-    @TestFactory
-    Stream<DynamicTest> aggregateRepositoryRules() {
-        return tests("aggregate-repository", JFoundryRules.aggregateRepositoryConventions());
-    }
-
-    private static Stream<DynamicTest> tests(String group, ArchRule[] rules) {
-        return IntStream.range(0, rules.length)
-                .mapToObj(index -> DynamicTest.dynamicTest(
-                        group + " rule " + (index + 1),
-                        () -> rules[index].check(CLASSES)));
-    }
+    @ArchTest
+    static final ArchTests aggregateRepositoryRules = JFoundryRules.aggregateRepositoryConventions();
 }
