@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: expense-approval-demo
+  datasource:
+    url: jdbc:h2:file:./data/expense-approval;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
