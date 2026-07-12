@@ -22,10 +22,12 @@ import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.clai
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemData;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemMapper;
 import org.jfoundry.application.exception.ExternalAccessException;
+import org.jfoundry.architecture.hexagonal.SecondaryAdapter;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@SecondaryAdapter
 public class MybatisExpenseClaimQueryAdapter implements ExpenseClaimQueryPort {
 
     private final ExpenseClaimMapper claimMapper;

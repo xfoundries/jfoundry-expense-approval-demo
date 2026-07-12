@@ -9,7 +9,9 @@ import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimComman
 import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommands.UpdateItemCommand;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseItemId;
+import org.jfoundry.architecture.hexagonal.PrimaryPort;
 
+@PrimaryPort
 public interface ExpenseClaimCommandUseCase {
 
     ExpenseClaimId create(CreateClaimCommand command);
@@ -32,4 +34,3 @@ public interface ExpenseClaimCommandUseCase {
 
     void withdraw(ClaimCommand command);
 }
-

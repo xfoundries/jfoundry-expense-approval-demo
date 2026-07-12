@@ -7,7 +7,9 @@ import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.
 import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PageResult;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
+import org.jfoundry.architecture.hexagonal.PrimaryPort;
 
+@PrimaryPort
 public interface ExpenseClaimQueryUseCase {
 
     PageResult<ClaimSummary> findMine(Actor actor, ClaimState state, PageQuery page);
@@ -18,4 +20,3 @@ public interface ExpenseClaimQueryUseCase {
 
     ClaimDetail getDetail(Actor actor, ExpenseClaimId id);
 }
-

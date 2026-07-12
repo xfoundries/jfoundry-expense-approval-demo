@@ -24,6 +24,7 @@ import io.github.xfoundries.demo.expenseapproval.web.claim.response.ClaimRespons
 import io.github.xfoundries.demo.expenseapproval.web.claim.response.ClaimResponses.PageResponse;
 import io.github.xfoundries.demo.expenseapproval.web.claim.response.ClaimResponses.SummaryResponse;
 import jakarta.validation.Valid;
+import org.jfoundry.architecture.hexagonal.PrimaryAdapter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/claims")
+@PrimaryAdapter
 public class ExpenseClaimController {
 
     private final ExpenseClaimCommandUseCase commandUseCase;

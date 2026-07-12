@@ -12,4 +12,3 @@ public interface ExpenseClaimRepository extends Repository<ExpenseClaim, Expense
 
     void save(ExpenseClaim claim);
 }
-
