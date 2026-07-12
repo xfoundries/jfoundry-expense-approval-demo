@@ -44,7 +44,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         Instant now = clock.instant();
         ExpenseClaim claim = ExpenseClaim.draft(
                 ExpenseClaimId.generate(), command.actor().userId(), command.title(), now);
-        repository.save(claim);
+        repository.add(claim);
         return claim.id();
     }
 
@@ -61,7 +61,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
                 command.description(),
                 command.receiptReference());
         claim.addItem(command.actor().userId(), item, clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
         return item.id();
     }
 
@@ -78,7 +78,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
                 command.description(),
                 command.receiptReference());
         claim.updateItem(command.actor().userId(), item, clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -87,7 +87,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.EMPLOYEE);
         ExpenseClaim claim = load(command.claimId());
         claim.removeItem(command.actor().userId(), command.itemId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -96,7 +96,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.EMPLOYEE);
         ExpenseClaim claim = load(command.claimId());
         claim.submit(command.actor().userId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -105,7 +105,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.MANAGER);
         ExpenseClaim claim = load(command.claimId());
         claim.approveByManager(command.actor().userId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -114,7 +114,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.FINANCE);
         ExpenseClaim claim = load(command.claimId());
         claim.approveByFinance(command.actor().userId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -129,7 +129,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), requiredRole);
         claim.reject(
                 command.actor().userId(), RejectionReason.of(command.reason()), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -138,7 +138,7 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.EMPLOYEE);
         ExpenseClaim claim = load(command.claimId());
         claim.reopen(command.actor().userId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     @Override
@@ -147,13 +147,15 @@ public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseC
         requireRole(command.actor(), ActorRole.EMPLOYEE);
         ExpenseClaim claim = load(command.claimId());
         claim.withdraw(command.actor().userId(), clock.instant());
-        repository.save(claim);
+        repository.modify(claim);
     }
 
     private ExpenseClaim load(ExpenseClaimId id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new NotFoundException(
-                        "Expense claim not found: " + id.value()));
+        ExpenseClaim claim = repository.findById(id);
+        if (claim == null) {
+            throw new NotFoundException("Expense claim not found: " + id.value());
+        }
+        return claim;
     }
 
     private static void requireRole(Actor actor, ActorRole requiredRole) {

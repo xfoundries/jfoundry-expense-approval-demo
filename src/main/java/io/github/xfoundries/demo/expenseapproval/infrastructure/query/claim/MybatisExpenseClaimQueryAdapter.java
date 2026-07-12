@@ -21,9 +21,9 @@ import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.clai
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseClaimMapper;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemData;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemMapper;
-import org.jfoundry.application.exception.ExternalAccessException;
 import org.jfoundry.architecture.hexagonal.SecondaryAdapter;
-import org.springframework.dao.DataAccessException;
+import org.jfoundry.infrastructure.persistence.PersistenceFailureTranslator;
+import org.jfoundry.infrastructure.persistence.PersistenceOperation;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -33,14 +33,17 @@ public class MybatisExpenseClaimQueryAdapter implements ExpenseClaimQueryPort {
     private final ExpenseClaimMapper claimMapper;
     private final ExpenseItemMapper itemMapper;
     private final ClaimActionMapper actionMapper;
+    private final PersistenceFailureTranslator failureTranslator;
 
     public MybatisExpenseClaimQueryAdapter(
             ExpenseClaimMapper claimMapper,
             ExpenseItemMapper itemMapper,
-            ClaimActionMapper actionMapper) {
+            ClaimActionMapper actionMapper,
+            PersistenceFailureTranslator failureTranslator) {
         this.claimMapper = claimMapper;
         this.itemMapper = itemMapper;
         this.actionMapper = actionMapper;
+        this.failureTranslator = failureTranslator;
     }
 
     @Override
@@ -91,8 +94,8 @@ public class MybatisExpenseClaimQueryAdapter implements ExpenseClaimQueryPort {
                     root.getCompletedAt(),
                     items,
                     actions));
-        } catch (DataAccessException exception) {
-            throw new ExternalAccessException("Failed to query expense claim detail", exception);
+        } catch (RuntimeException failure) {
+            throw failureTranslator.translate(PersistenceOperation.QUERY, failure);
         }
     }
 
@@ -106,8 +109,8 @@ public class MybatisExpenseClaimQueryAdapter implements ExpenseClaimQueryPort {
                     page.getTotal(),
                     pageQuery.page(),
                     pageQuery.size());
-        } catch (DataAccessException exception) {
-            throw new ExternalAccessException("Failed to query expense claims", exception);
+        } catch (RuntimeException failure) {
+            throw failureTranslator.translate(PersistenceOperation.QUERY, failure);
         }
     }
 

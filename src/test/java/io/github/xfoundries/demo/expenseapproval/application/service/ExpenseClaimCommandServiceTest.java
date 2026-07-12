@@ -5,7 +5,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommands.Actor;
 import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommands.ActorRole;
@@ -62,7 +61,7 @@ class ExpenseClaimCommandServiceTest {
         ExpenseClaimId id = service.create(new CreateClaimCommand(EMPLOYEE, "Customer visit"));
 
         ArgumentCaptor<ExpenseClaim> captor = ArgumentCaptor.forClass(ExpenseClaim.class);
-        verify(repository).save(captor.capture());
+        verify(repository).add(captor.capture());
         assertThat(captor.getValue().id()).isEqualTo(id);
         assertThat(captor.getValue().claimant()).isEqualTo(EMPLOYEE_ID);
         assertThat(captor.getValue().state()).isEqualTo(ClaimState.DRAFT);
@@ -71,23 +70,23 @@ class ExpenseClaimCommandServiceTest {
     @Test
     void managerApprovalLoadsAggregateInvokesBehaviorAndSavesOnce() {
         ExpenseClaim claim = submittedClaim("100.00");
-        when(repository.findById(claim.id())).thenReturn(Optional.of(claim));
+        when(repository.findById(claim.id())).thenReturn(claim);
 
         service.approveByManager(new ApproveCommand(MANAGER, claim.id()));
 
         assertThat(claim.state()).isEqualTo(ClaimState.APPROVED);
-        verify(repository).save(claim);
+        verify(repository).modify(claim);
     }
 
     @Test
     void missingClaimBecomesNotFound() {
         ExpenseClaimId id = ExpenseClaimId.of("missing");
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(null);
 
         assertThatThrownBy(() -> service.approveByManager(new ApproveCommand(MANAGER, id)))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("missing");
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(repository, never()).modify(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -103,7 +102,7 @@ class ExpenseClaimCommandServiceTest {
     @Test
     void rejectionRoleMustMatchCurrentApprovalStage() {
         ExpenseClaim claim = submittedClaim("2000.01");
-        when(repository.findById(claim.id())).thenReturn(Optional.of(claim));
+        when(repository.findById(claim.id())).thenReturn(claim);
 
         assertThatThrownBy(() -> service.reject(
                 new RejectClaimCommand(FINANCE, claim.id(), "Missing receipt")))
@@ -112,20 +111,20 @@ class ExpenseClaimCommandServiceTest {
 
         service.reject(new RejectClaimCommand(MANAGER, claim.id(), "Missing receipt"));
         assertThat(claim.state()).isEqualTo(ClaimState.REJECTED);
-        verify(repository).save(claim);
+        verify(repository).modify(claim);
     }
 
     @Test
     void domainSelfApprovalRulePassesThroughWithoutSaving() {
         ExpenseClaim claim = submittedClaim("100.00");
         Actor claimantAsManager = new Actor(EMPLOYEE_ID, ActorRole.MANAGER);
-        when(repository.findById(claim.id())).thenReturn(Optional.of(claim));
+        when(repository.findById(claim.id())).thenReturn(claim);
 
         assertThatThrownBy(() -> service.approveByManager(
                 new ApproveCommand(claimantAsManager, claim.id())))
                 .isInstanceOf(DomainRuleViolationException.class)
                 .hasMessageContaining("own claim");
-        verify(repository, never()).save(claim);
+        verify(repository, never()).modify(claim);
     }
 
     private static ExpenseClaim submittedClaim(String amount) {

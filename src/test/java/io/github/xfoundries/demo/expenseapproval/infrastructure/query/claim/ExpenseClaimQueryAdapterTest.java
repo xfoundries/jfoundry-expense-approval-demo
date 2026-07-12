@@ -43,9 +43,9 @@ class ExpenseClaimQueryAdapterTest {
 
     @Test
     void ownedClaimsCanBeFilteredAndPaged() {
-        repository.save(draft("claim-1", EMPLOYEE_1, "Draft"));
-        repository.save(submitted("claim-2", EMPLOYEE_1, "Small", "100.00"));
-        repository.save(submitted("claim-3", EMPLOYEE_2, "Other owner", "100.00"));
+        repository.add(draft("claim-1", EMPLOYEE_1, "Draft"));
+        repository.add(submitted("claim-2", EMPLOYEE_1, "Small", "100.00"));
+        repository.add(submitted("claim-3", EMPLOYEE_2, "Other owner", "100.00"));
 
         PageResult<ClaimSummary> page = queryPort.findOwned(
                 EMPLOYEE_1, ClaimState.PENDING_MANAGER, new PageQuery(0, 1));
@@ -59,8 +59,8 @@ class ExpenseClaimQueryAdapterTest {
         ExpenseClaim managerPending = submitted("claim-manager", EMPLOYEE_1, "Small", "100.00");
         ExpenseClaim financePending = submitted("claim-finance", EMPLOYEE_2, "Large", "2000.01");
         financePending.approveByManager(MANAGER, NOW.plusSeconds(3));
-        repository.save(managerPending);
-        repository.save(financePending);
+        repository.add(managerPending);
+        repository.add(financePending);
 
         assertThat(queryPort.findPendingManager(new PageQuery(0, 20)).items())
                 .extracting(ClaimSummary::id).containsExactly("claim-manager");
@@ -72,7 +72,7 @@ class ExpenseClaimQueryAdapterTest {
     void detailContainsItemsAndOrderedActionHistory() {
         ExpenseClaim claim = submitted("claim-detail", EMPLOYEE_1, "Large", "2000.01");
         claim.approveByManager(MANAGER, NOW.plusSeconds(3));
-        repository.save(claim);
+        repository.add(claim);
 
         ClaimDetail detail = queryPort.findDetail(claim.id()).orElseThrow();
 

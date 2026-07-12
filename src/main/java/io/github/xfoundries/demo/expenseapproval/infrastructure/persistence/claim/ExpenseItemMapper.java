@@ -2,17 +2,19 @@ package io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.cla
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 public interface ExpenseItemMapper extends BaseMapper<ExpenseItemData> {
 
-    @Select("select * from expense_item where claim_id = #{claimId} order by item_order, id")
-    List<ExpenseItemData> selectByClaimId(@Param("claimId") String claimId);
+    default List<ExpenseItemData> selectByClaimId(String claimId) {
+        return selectList(new LambdaQueryWrapper<ExpenseItemData>()
+                .eq(ExpenseItemData::getClaimId, claimId)
+                .orderByAsc(ExpenseItemData::getItemOrder, ExpenseItemData::getId));
+    }
 
-    @Delete("delete from expense_item where claim_id = #{claimId}")
-    int deleteByClaimId(@Param("claimId") String claimId);
+    default int deleteByClaimId(String claimId) {
+        return delete(new LambdaQueryWrapper<ExpenseItemData>()
+                .eq(ExpenseItemData::getClaimId, claimId));
+    }
 }
-

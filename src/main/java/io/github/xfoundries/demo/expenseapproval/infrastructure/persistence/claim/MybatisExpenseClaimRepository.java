@@ -1,7 +1,6 @@
 package io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim;
 
 import java.util.List;
-import java.util.Optional;
 
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimAction;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimActionType;
@@ -14,12 +13,15 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseItemId;
 import io.github.xfoundries.demo.expenseapproval.domain.model.Money;
 import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
-import org.jfoundry.application.exception.ExternalAccessException;
-import org.springframework.dao.DataAccessException;
+import org.jfoundry.application.exception.ConflictException;
+import org.jfoundry.infrastructure.persistence.AbstractAggregateRepository;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class MybatisExpenseClaimRepository implements ExpenseClaimRepository {
+public class MybatisExpenseClaimRepository
+        extends AbstractAggregateRepository<ExpenseClaim, ExpenseClaimId>
+        implements ExpenseClaimRepository {
 
     private final ExpenseClaimMapper claimMapper;
     private final ExpenseItemMapper itemMapper;
@@ -35,44 +37,66 @@ public class MybatisExpenseClaimRepository implements ExpenseClaimRepository {
     }
 
     @Override
-    public Optional<ExpenseClaim> findById(ExpenseClaimId id) {
-        try {
-            ExpenseClaimData root = claimMapper.selectById(id.value());
-            if (root == null) {
-                return Optional.empty();
-            }
-            return Optional.of(toDomain(
-                    root,
-                    itemMapper.selectByClaimId(id.value()),
-                    actionMapper.selectByClaimId(id.value())));
-        } catch (DataAccessException exception) {
-            throw new ExternalAccessException("Failed to load expense claim", exception);
+    protected ExpenseClaim doFindById(ExpenseClaimId id) {
+        ExpenseClaimData root = claimMapper.selectById(id.value());
+        if (root == null) {
+            return null;
         }
+        return toDomain(
+                root,
+                itemMapper.selectByClaimId(id.value()),
+                actionMapper.selectByClaimId(id.value()));
     }
 
     @Override
-    public void save(ExpenseClaim claim) {
+    protected void doAdd(ExpenseClaim claim) {
+        ExpenseClaimData root = toData(claim);
         try {
-            ExpenseClaimData root = toData(claim);
-            if (claimMapper.selectById(root.getId()) == null) {
-                claimMapper.insert(root);
-            } else {
-                claimMapper.updateById(root);
-            }
+            claimMapper.insert(root);
+        } catch (DuplicateKeyException exception) {
+            throw new ConflictException(
+                    "Expense claim already exists: " + claim.id().value(), exception);
+        }
+        insertItems(root.getId(), claim.items());
+        insertActions(root.getId(), claim.actions(), 0);
+    }
 
-            itemMapper.deleteByClaimId(root.getId());
-            List<ExpenseItem> items = claim.items();
-            for (int index = 0; index < items.size(); index++) {
-                itemMapper.insert(toData(root.getId(), index, items.get(index)));
-            }
+    @Override
+    protected void doModify(ExpenseClaim claim) {
+        ExpenseClaimData root = toData(claim);
+        int affected = claimMapper.updateWithVersion(root);
+        if (affected == 0) {
+            throw new IllegalStateException(
+                    "Expense claim not found or optimistic lock conflict: " + claim.id().value());
+        }
+        itemMapper.deleteByClaimId(root.getId());
+        insertItems(root.getId(), claim.items());
 
-            actionMapper.deleteByClaimId(root.getId());
-            List<ClaimAction> actions = claim.actions();
-            for (int index = 0; index < actions.size(); index++) {
-                actionMapper.insert(toData(root.getId(), index, actions.get(index)));
-            }
-        } catch (DataAccessException exception) {
-            throw new ExternalAccessException("Failed to save expense claim", exception);
+        int persistedActionCount = actionMapper.selectByClaimId(root.getId()).size();
+        if (persistedActionCount > claim.actions().size()) {
+            throw new IllegalStateException(
+                    "Persisted action history is longer than aggregate history: " + claim.id().value());
+        }
+        insertActions(root.getId(), claim.actions(), persistedActionCount);
+    }
+
+    @Override
+    protected void doRemove(ExpenseClaim claim) {
+        int affected = claimMapper.deleteById(claim.id().value());
+        if (affected == 0) {
+            throw new IllegalStateException("Expense claim not found: " + claim.id().value());
+        }
+    }
+
+    private void insertItems(String claimId, List<ExpenseItem> items) {
+        for (int index = 0; index < items.size(); index++) {
+            itemMapper.insert(toData(claimId, index, items.get(index)));
+        }
+    }
+
+    private void insertActions(String claimId, List<ClaimAction> actions, int startIndex) {
+        for (int index = startIndex; index < actions.size(); index++) {
+            actionMapper.insert(toData(claimId, index, actions.get(index)));
         }
     }
 
