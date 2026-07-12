@@ -26,7 +26,6 @@ public final class ExpenseClaim extends BaseAggregateRoot<ExpenseClaim, ExpenseC
     private Instant submittedAt;
     private Instant completedAt;
     private boolean financeApprovalRequired;
-    private long version;
 
     private ExpenseClaim(
             ExpenseClaimId id,
@@ -39,8 +38,7 @@ public final class ExpenseClaim extends BaseAggregateRoot<ExpenseClaim, ExpenseC
             Instant updatedAt,
             Instant submittedAt,
             Instant completedAt,
-            boolean financeApprovalRequired,
-            long version) {
+            boolean financeApprovalRequired) {
         super(require(id, "Expense claim id is required"));
         this.claimant = require(claimant, "Claimant is required");
         this.title = validateTitle(title);
@@ -53,14 +51,13 @@ public final class ExpenseClaim extends BaseAggregateRoot<ExpenseClaim, ExpenseC
         this.submittedAt = submittedAt;
         this.completedAt = completedAt;
         this.financeApprovalRequired = financeApprovalRequired;
-        this.version = version;
     }
 
     public static ExpenseClaim draft(
             ExpenseClaimId id, UserId claimant, String title, Instant now) {
         return new ExpenseClaim(
                 id, claimant, title, ClaimState.DRAFT, List.of(), List.of(),
-                now, now, null, null, false, 0L);
+                now, now, null, null, false);
     }
 
     public static ExpenseClaim restore(
@@ -74,11 +71,10 @@ public final class ExpenseClaim extends BaseAggregateRoot<ExpenseClaim, ExpenseC
             Instant updatedAt,
             Instant submittedAt,
             Instant completedAt,
-            boolean financeApprovalRequired,
-            long version) {
+            boolean financeApprovalRequired) {
         return new ExpenseClaim(
                 id, claimant, title, state, items, actions, createdAt, updatedAt,
-                submittedAt, completedAt, financeApprovalRequired, version);
+                submittedAt, completedAt, financeApprovalRequired);
     }
 
     public void addItem(UserId actor, ExpenseItem item, Instant now) {
@@ -224,10 +220,6 @@ public final class ExpenseClaim extends BaseAggregateRoot<ExpenseClaim, ExpenseC
 
     public boolean financeApprovalRequired() {
         return financeApprovalRequired;
-    }
-
-    public long version() {
-        return version;
     }
 
     private void requireEditableBy(UserId actor) {

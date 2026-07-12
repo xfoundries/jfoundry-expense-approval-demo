@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import org.jfoundry.infrastructure.persistence.AggregateData;
 
 @TableName("expense_claim")
@@ -18,7 +19,8 @@ public class ExpenseClaimData extends AggregateData<String> {
     private Instant updatedAt;
     private Instant submittedAt;
     private Instant completedAt;
-    private long version;
+    @Version
+    private Long version = 0L;
 
     public String getClaimantId() { return claimantId; }
     public void setClaimantId(String claimantId) { this.claimantId = claimantId; }
@@ -38,7 +40,6 @@ public class ExpenseClaimData extends AggregateData<String> {
     public void setSubmittedAt(Instant submittedAt) { this.submittedAt = submittedAt; }
     public Instant getCompletedAt() { return completedAt; }
     public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
-    public long getVersion() { return version; }
-    public void setVersion(long version) { this.version = version; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }
-

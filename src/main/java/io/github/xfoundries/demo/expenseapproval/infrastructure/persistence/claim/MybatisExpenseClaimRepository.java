@@ -2,6 +2,7 @@ package io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.cla
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimAction;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimActionType;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
@@ -15,6 +16,9 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
 import org.jfoundry.application.exception.ConflictException;
 import org.jfoundry.infrastructure.persistence.AbstractAggregateRepository;
+import org.jfoundry.infrastructure.persistence.AggregatePersistenceContext;
+import org.jfoundry.infrastructure.persistence.PersistenceStateKey;
+import org.jfoundry.infrastructure.persistence.mybatis.VersionedDataAccessor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -23,17 +27,25 @@ public class MybatisExpenseClaimRepository
         extends AbstractAggregateRepository<ExpenseClaim, ExpenseClaimId>
         implements ExpenseClaimRepository {
 
+    private static final PersistenceStateKey<Long> VERSION =
+            PersistenceStateKey.of("expense-claim.version", Long.class);
+    private static final VersionedDataAccessor<ExpenseClaimData, Long> VERSION_ACCESSOR =
+            new ExpenseClaimVersionAccessor();
+
     private final ExpenseClaimMapper claimMapper;
     private final ExpenseItemMapper itemMapper;
     private final ClaimActionMapper actionMapper;
+    private final AggregatePersistenceContext persistenceContext;
 
     public MybatisExpenseClaimRepository(
             ExpenseClaimMapper claimMapper,
             ExpenseItemMapper itemMapper,
-            ClaimActionMapper actionMapper) {
+            ClaimActionMapper actionMapper,
+            AggregatePersistenceContext persistenceContext) {
         this.claimMapper = claimMapper;
         this.itemMapper = itemMapper;
         this.actionMapper = actionMapper;
+        this.persistenceContext = persistenceContext;
     }
 
     @Override
@@ -42,10 +54,12 @@ public class MybatisExpenseClaimRepository
         if (root == null) {
             return null;
         }
-        return toDomain(
+        ExpenseClaim claim = toDomain(
                 root,
                 itemMapper.selectByClaimId(id.value()),
                 actionMapper.selectByClaimId(id.value()));
+        persistenceContext.attach(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
+        return claim;
     }
 
     @Override
@@ -59,15 +73,18 @@ public class MybatisExpenseClaimRepository
         }
         insertItems(root.getId(), claim.items());
         insertActions(root.getId(), claim.actions(), 0);
+        persistenceContext.attach(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
     }
 
     @Override
     protected void doModify(ExpenseClaim claim) {
         ExpenseClaimData root = toData(claim);
-        int affected = claimMapper.updateWithVersion(root);
+        Long originalVersion = persistenceContext.require(claim, VERSION);
+        VERSION_ACCESSOR.setVersion(root, originalVersion);
+        int affected = claimMapper.updateById(root);
         if (affected == 0) {
-            throw new IllegalStateException(
-                    "Expense claim not found or optimistic lock conflict: " + claim.id().value());
+            throw new ConflictException(
+                    "Expense claim optimistic lock conflict: " + claim.id().value());
         }
         itemMapper.deleteByClaimId(root.getId());
         insertItems(root.getId(), claim.items());
@@ -78,13 +95,18 @@ public class MybatisExpenseClaimRepository
                     "Persisted action history is longer than aggregate history: " + claim.id().value());
         }
         insertActions(root.getId(), claim.actions(), persistedActionCount);
+        persistenceContext.replace(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
     }
 
     @Override
     protected void doRemove(ExpenseClaim claim) {
-        int affected = claimMapper.deleteById(claim.id().value());
+        Long originalVersion = persistenceContext.require(claim, VERSION);
+        int affected = claimMapper.delete(Wrappers.<ExpenseClaimData>lambdaQuery()
+                .eq(ExpenseClaimData::getId, claim.id().value())
+                .eq(ExpenseClaimData::getVersion, originalVersion));
         if (affected == 0) {
-            throw new IllegalStateException("Expense claim not found: " + claim.id().value());
+            throw new ConflictException(
+                    "Expense claim remove optimistic lock conflict: " + claim.id().value());
         }
     }
 
@@ -112,7 +134,6 @@ public class MybatisExpenseClaimRepository
         data.setUpdatedAt(claim.updatedAt());
         data.setSubmittedAt(claim.submittedAt().orElse(null));
         data.setCompletedAt(claim.completedAt().orElse(null));
-        data.setVersion(claim.version());
         return data;
     }
 
@@ -174,7 +195,25 @@ public class MybatisExpenseClaimRepository
                 root.getUpdatedAt(),
                 root.getSubmittedAt(),
                 root.getCompletedAt(),
-                root.isFinanceApprovalRequired(),
-                root.getVersion());
+                root.isFinanceApprovalRequired());
+    }
+
+    private static final class ExpenseClaimVersionAccessor
+            implements VersionedDataAccessor<ExpenseClaimData, Long> {
+
+        @Override
+        public Class<Long> versionType() {
+            return Long.class;
+        }
+
+        @Override
+        public Long getVersion(ExpenseClaimData data) {
+            return data.getVersion();
+        }
+
+        @Override
+        public void setVersion(ExpenseClaimData data, Long version) {
+            data.setVersion(version);
+        }
     }
 }

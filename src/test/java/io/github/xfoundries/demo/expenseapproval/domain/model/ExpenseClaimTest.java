@@ -3,6 +3,7 @@ package io.github.xfoundries.demo.expenseapproval.domain.model;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Arrays;
 
 import org.jfoundry.domain.exception.DomainRuleViolationException;
 import org.jfoundry.domain.exception.DomainStateException;
@@ -18,6 +19,13 @@ class ExpenseClaimTest {
     private static final UserId OTHER_EMPLOYEE = UserId.of("employee-2");
     private static final UserId MANAGER = UserId.of("manager-1");
     private static final UserId FINANCE = UserId.of("finance-1");
+
+    @Test
+    void domainAggregateDoesNotContainPersistenceVersion() {
+        assertThat(Arrays.stream(ExpenseClaim.class.getDeclaredFields())
+                .map(java.lang.reflect.Field::getName))
+                .doesNotContain("version");
+    }
 
     @Test
     void expenseItemAmountMustBePositiveCny() {

@@ -27,7 +27,7 @@ import org.jfoundry.application.exception.NotFoundException;
 import org.jfoundry.application.transaction.ApplicationTransactional;
 
 @ApplicationService
-public final class ExpenseClaimCommandService implements ExpenseClaimCommandUseCase {
+public class ExpenseClaimCommandService implements ExpenseClaimCommandUseCase {
 
     private final ExpenseClaimRepository repository;
     private final Clock clock;
