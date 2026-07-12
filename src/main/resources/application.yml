@@ -2,7 +2,7 @@ spring:
   application:
     name: expense-approval-demo
   datasource:
-    url: jdbc:h2:file:./data/expense-approval;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/expense-approval;AUTO_SERVER=TRUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
