@@ -2,7 +2,6 @@ package io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.cla
 
 import java.util.List;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimAction;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimActionType;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
@@ -15,99 +14,69 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.Money;
 import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
 import org.jfoundry.application.exception.ConflictException;
-import org.jfoundry.infrastructure.persistence.AbstractAggregateRepository;
-import org.jfoundry.infrastructure.persistence.AggregatePersistenceContext;
-import org.jfoundry.infrastructure.persistence.PersistenceStateKey;
-import org.jfoundry.infrastructure.persistence.mybatis.VersionedDataAccessor;
+import org.jfoundry.infrastructure.persistence.mybatis.MybatisPlusAggregateRepository;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class MybatisExpenseClaimRepository
-        extends AbstractAggregateRepository<ExpenseClaim, ExpenseClaimId>
+        extends MybatisPlusAggregateRepository<
+                ExpenseClaim, ExpenseClaimId, ExpenseClaimData, String>
         implements ExpenseClaimRepository {
 
-    private static final PersistenceStateKey<Long> VERSION =
-            PersistenceStateKey.of("expense-claim.version", Long.class);
-    private static final VersionedDataAccessor<ExpenseClaimData, Long> VERSION_ACCESSOR =
-            new ExpenseClaimVersionAccessor();
+    private static final ExpenseClaimRootDataMapper ROOT_DATA_MAPPER =
+            new ExpenseClaimRootDataMapper();
 
-    private final ExpenseClaimMapper claimMapper;
     private final ExpenseItemMapper itemMapper;
     private final ClaimActionMapper actionMapper;
-    private final AggregatePersistenceContext persistenceContext;
 
     public MybatisExpenseClaimRepository(
             ExpenseClaimMapper claimMapper,
             ExpenseItemMapper itemMapper,
-            ClaimActionMapper actionMapper,
-            AggregatePersistenceContext persistenceContext) {
-        this.claimMapper = claimMapper;
+            ClaimActionMapper actionMapper) {
+        super(
+                claimMapper,
+                ROOT_DATA_MAPPER::toData,
+                ROOT_DATA_MAPPER::toDataId,
+                ExpenseClaimData.class);
         this.itemMapper = itemMapper;
         this.actionMapper = actionMapper;
-        this.persistenceContext = persistenceContext;
     }
 
     @Override
     protected ExpenseClaim doFindById(ExpenseClaimId id) {
-        ExpenseClaimData root = claimMapper.selectById(id.value());
-        if (root == null) {
-            return null;
-        }
-        ExpenseClaim claim = toDomain(
+        return loadAggregate(id, root -> toDomain(
                 root,
-                itemMapper.selectByClaimId(id.value()),
-                actionMapper.selectByClaimId(id.value()));
-        persistenceContext.attach(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
-        return claim;
+                itemMapper.selectByClaimId(root.getId()),
+                actionMapper.selectByClaimId(root.getId())));
     }
 
     @Override
     protected void doAdd(ExpenseClaim claim) {
-        ExpenseClaimData root = toData(claim);
-        try {
-            claimMapper.insert(root);
-        } catch (DuplicateKeyException exception) {
-            throw new ConflictException(
-                    "Expense claim already exists: " + claim.id().value(), exception);
-        }
-        insertItems(root.getId(), claim.items());
-        insertActions(root.getId(), claim.actions(), 0);
-        persistenceContext.attach(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
+        insertAggregate(
+                claim,
+                ROOT_DATA_MAPPER.toData(claim),
+                root -> {
+                    insertItems(root.getId(), claim.items());
+                    insertActions(root.getId(), claim.actions(), 0);
+                },
+                failure -> translateRootInsertFailure(claim, failure));
     }
 
     @Override
     protected void doModify(ExpenseClaim claim) {
-        ExpenseClaimData root = toData(claim);
-        Long originalVersion = persistenceContext.require(claim, VERSION);
-        VERSION_ACCESSOR.setVersion(root, originalVersion);
-        int affected = claimMapper.updateById(root);
-        if (affected == 0) {
-            throw new ConflictException(
-                    "Expense claim optimistic lock conflict: " + claim.id().value());
-        }
-        itemMapper.deleteByClaimId(root.getId());
-        insertItems(root.getId(), claim.items());
+        updateAggregate(claim, ROOT_DATA_MAPPER.toData(claim), root -> {
+            itemMapper.deleteByClaimId(root.getId());
+            insertItems(root.getId(), claim.items());
 
-        int persistedActionCount = actionMapper.selectByClaimId(root.getId()).size();
-        if (persistedActionCount > claim.actions().size()) {
-            throw new IllegalStateException(
-                    "Persisted action history is longer than aggregate history: " + claim.id().value());
-        }
-        insertActions(root.getId(), claim.actions(), persistedActionCount);
-        persistenceContext.replace(claim, VERSION, VERSION_ACCESSOR.getVersion(root));
-    }
-
-    @Override
-    protected void doRemove(ExpenseClaim claim) {
-        Long originalVersion = persistenceContext.require(claim, VERSION);
-        int affected = claimMapper.delete(Wrappers.<ExpenseClaimData>lambdaQuery()
-                .eq(ExpenseClaimData::getId, claim.id().value())
-                .eq(ExpenseClaimData::getVersion, originalVersion));
-        if (affected == 0) {
-            throw new ConflictException(
-                    "Expense claim remove optimistic lock conflict: " + claim.id().value());
-        }
+            int persistedActionCount = actionMapper.selectByClaimId(root.getId()).size();
+            if (persistedActionCount > claim.actions().size()) {
+                throw new IllegalStateException(
+                        "Persisted action history is longer than aggregate history: "
+                                + claim.id().value());
+            }
+            insertActions(root.getId(), claim.actions(), persistedActionCount);
+        });
     }
 
     private void insertItems(String claimId, List<ExpenseItem> items) {
@@ -120,21 +89,6 @@ public class MybatisExpenseClaimRepository
         for (int index = startIndex; index < actions.size(); index++) {
             actionMapper.insert(toData(claimId, index, actions.get(index)));
         }
-    }
-
-    private static ExpenseClaimData toData(ExpenseClaim claim) {
-        ExpenseClaimData data = new ExpenseClaimData();
-        data.setId(claim.id().value());
-        data.setClaimantId(claim.claimant().value());
-        data.setTitle(claim.title());
-        data.setState(claim.state().name());
-        data.setTotalAmount(claim.total().amount());
-        data.setFinanceApprovalRequired(claim.financeApprovalRequired());
-        data.setCreatedAt(claim.createdAt());
-        data.setUpdatedAt(claim.updatedAt());
-        data.setSubmittedAt(claim.submittedAt().orElse(null));
-        data.setCompletedAt(claim.completedAt().orElse(null));
-        return data;
     }
 
     private static ExpenseItemData toData(String claimId, int order, ExpenseItem item) {
@@ -198,22 +152,13 @@ public class MybatisExpenseClaimRepository
                 root.isFinanceApprovalRequired());
     }
 
-    private static final class ExpenseClaimVersionAccessor
-            implements VersionedDataAccessor<ExpenseClaimData, Long> {
-
-        @Override
-        public Class<Long> versionType() {
-            return Long.class;
+    private static RuntimeException translateRootInsertFailure(
+            ExpenseClaim claim,
+            RuntimeException failure) {
+        if (failure instanceof DuplicateKeyException duplicateKey) {
+            return new ConflictException(
+                    "Expense claim already exists: " + claim.id().value(), duplicateKey);
         }
-
-        @Override
-        public Long getVersion(ExpenseClaimData data) {
-            return data.getVersion();
-        }
-
-        @Override
-        public void setVersion(ExpenseClaimData data, Long version) {
-            data.setVersion(version);
-        }
+        return failure;
     }
 }
