@@ -4,28 +4,28 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.ZoneId;
 
-import io.github.xfoundries.demo.expenseapproval.application.command.DefaultClaimCommandDispatcher;
-import io.github.xfoundries.demo.expenseapproval.application.command.FinalApprovalCoordinator;
-import io.github.xfoundries.demo.expenseapproval.application.command.MonthlyApprovalLimitPolicy;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.AddExpenseItemCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.ApproveExpenseClaimByFinanceCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.ApproveExpenseClaimByManagerCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.ClaimCommandContext;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.CreateExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.RejectExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.RemoveExpenseItemCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.ReopenExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.SubmitExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.UpdateExpenseItemCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.WithdrawExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommandDispatcher;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ExpenseClaimQueryUseCase;
-import io.github.xfoundries.demo.expenseapproval.application.port.out.ExpenseClaimQueryPort;
-import io.github.xfoundries.demo.expenseapproval.application.port.out.MonthlyApprovedAmountPort;
-import io.github.xfoundries.demo.expenseapproval.application.integration.ExpenseClaimApprovedTranslator;
-import io.github.xfoundries.demo.expenseapproval.application.integration.PaymentResultProjector;
-import io.github.xfoundries.demo.expenseapproval.application.port.out.PaymentStatusProjectionPort;
-import io.github.xfoundries.demo.expenseapproval.application.service.ExpenseClaimQueryService;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.DefaultClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.approval.FinalApprovalCoordinator;
+import io.github.xfoundries.demo.expenseapproval.domain.policy.MonthlyExpenseLimitPolicy;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.AddExpenseItemCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ApproveExpenseClaimByFinanceCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ApproveExpenseClaimByManagerCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ClaimCommandContext;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.CreateExpenseClaimCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.RejectExpenseClaimCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.RemoveExpenseItemCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ReopenExpenseClaimCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.SubmitExpenseClaimCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.UpdateExpenseItemCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.WithdrawExpenseClaimCommandHandler;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.ExpenseClaimQueries;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.ExpenseClaimViewReader;
+import io.github.xfoundries.demo.expenseapproval.application.approval.ApprovedExpenseAmountReader;
+import io.github.xfoundries.demo.expenseapproval.application.approval.ExpenseClaimApprovedTranslator;
+import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentResultProjector;
+import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentStatusProjectionStore;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.ExpenseClaimQueryService;
 import io.github.xfoundries.demo.expenseapproval.domain.model.Money;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
 import org.jfoundry.application.lock.LockTemplate;
@@ -90,15 +90,15 @@ public class ApplicationConfiguration {
     @Bean
     FinalApprovalCoordinator finalApprovalCoordinator(
             ExpenseClaimRepository repository,
-            MonthlyApprovedAmountPort monthlyApprovedAmountPort,
+            ApprovedExpenseAmountReader approvedExpenseAmountReader,
             LockTemplate lockTemplate,
             TransactionRunner transactionRunner,
             OutboxTemplate outboxTemplate,
             Clock applicationClock) {
         return new FinalApprovalCoordinator(
                 repository,
-                monthlyApprovedAmountPort,
-                new MonthlyApprovalLimitPolicy(Money.cny("10000.00")),
+                approvedExpenseAmountReader,
+                new MonthlyExpenseLimitPolicy(Money.cny("10000.00")),
                 lockTemplate,
                 transactionRunner,
                 outboxTemplate,
@@ -142,15 +142,15 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    ExpenseClaimQueryUseCase expenseClaimQueryUseCase(ExpenseClaimQueryPort queryPort) {
-        return new ExpenseClaimQueryService(queryPort);
+    ExpenseClaimQueries expenseClaimQueries(ExpenseClaimViewReader viewReader) {
+        return new ExpenseClaimQueryService(viewReader);
     }
 
     @Bean
     PaymentResultProjector paymentResultProjector(
             InboxTemplate inboxTemplate,
             TransactionRunner transactionRunner,
-            PaymentStatusProjectionPort projectionPort) {
-        return new PaymentResultProjector(inboxTemplate, transactionRunner, projectionPort);
+            PaymentStatusProjectionStore projectionStore) {
+        return new PaymentResultProjector(inboxTemplate, transactionRunner, projectionStore);
     }
 }
