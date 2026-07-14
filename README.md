@@ -168,3 +168,69 @@ curl --fail-with-body -i -X POST http://localhost:8080/api/claims \
 ```
 
 查询报销单详情时，响应中的支付状态会从 `PENDING` 最终收敛为 `PAID` 或 `FAILED`。
+
+---
+
+## 验证结论与能力边界
+
+### 总体判断
+
+在 Java 21、Spring Boot、MyBatis-Plus、PostgreSQL、Kafka 和 Redis 这一已选技术栈内，本 Demo
+证明 `domain-architecture` 插件与可选的 jfoundry 可以支撑 AI Agent 从业务需求、领域建模和
+六边形架构决策，一直完成领域实现、CQRS、Outbox、Inbox、分布式锁、持久化和端到端验收。
+
+这个结论不是由脚手架结构得出的，而是来自真实业务链路：HTTP 命令进入聚合，业务数据与 Outbox
+在同一事务提交，Kafka 跨进程投递，两个消费者通过 Inbox 保证幂等，支付结果最终进入查询投影；
+跨聚合月度额度则由 Redis 锁与数据库事务共同保护。
+
+### 验证证据
+
+- jfoundry 在 Java 21 和 Java 25 下完成两套 67 模块测试矩阵。
+- `domain-architecture` 插件的全部 skill、Codex plugin manifest 和 Claude marketplace 通过校验。
+- Demo 共通过 133 个自动化测试，其中完整容器 E2E 为 `5/5`。
+- E2E 覆盖支付成功、支付失败、重复投递、并发月度额度，以及超额回滚且不写 Outbox。
+- 独立启动两个应用和真实中间件后，HTTP 审批到支付状态 `PAID` 的完整链路再次通过。
+
+### 对 jfoundry 的反哺
+
+Demo 开发过程中发现并修正了多项框架能力缺口：
+
+- 统一聚合持久化跟踪和乐观锁上下文，使单表与多表聚合共享同一套生命周期入口，同时把从表同步
+  保留为业务适配器的明确责任。
+- 让仓储生命周期入口可被 Spring CGLIB 正确代理，并由框架统一翻译已知持久化访问故障。
+- 增加显式 `OutboxTemplate`，支持在应用边界把内部领域事件转换成独立、版本化的集成事件。
+- 修正 PostgreSQL Inbox 幂等处理，以及分布式锁、Outbox、Kafka sender 的自动装配顺序。
+- 补齐非 Web 应用的 Jackson 支持，并让默认 Outbox JSON 不再泄漏 Java 类型元数据。
+
+这些修复以框架中立契约、运行时适配和业务责任边界为依据，没有为了兼容错误行为保留双轨实现。
+
+### 对 domain-architecture 插件的反哺
+
+插件指导同步补充了以下内容：
+
+- 新项目必须先决定单模块或多模块等项目形态，不能由脚手架隐式决定。
+- Hexagonal、Onion 等架构风格来自前序架构决策，不能把 Hexagonal 当成默认值。
+- jfoundry 始终是可选的框架落地，不影响框架中立的领域建模与架构指导。
+- 聚合 Repository 首先是 DDD 契约；在 Hexagonal 中表达为 Secondary Port 是合理选择，但不是
+  改变其领域身份的强制分类。
+- 补充多表聚合持久化、异常边界、Spring 代理、可移植集成事件 JSON、broker sender 验证，以及
+  Outbox/Inbox 的使用条件和契约转换责任。
+- 只有包内全部类型角色一致时才使用包级架构注解，混合包应拆包或使用类型级注解。
+
+### Demo 自身得到的修正
+
+Demo 从原来的单模块费用审批项目演进为四模块项目，并保持业务逻辑刻意简单。CQRS 没有演变成通用
+命令总线，支付模拟器也没有被强行建模为 DDD 聚合；每个机制只承担一个真实且必要的职责。
+
+同时修正了混合包使用包级 Port 注解、E2E 无独立 Maven profile、固定 sleep 等项目表达问题，
+并让 Kafka listener 与 Outbox dispatcher 在普通本地启动时默认关闭、在完整集成环境中显式开启。
+
+### 能力边界
+
+当前可以确认的是：在已经验证的技术栈和业务复杂度内，jfoundry 与 `domain-architecture` 插件足以
+支撑 AI Agent 开发一个基于 DDD、Hexagonal Architecture 和可靠消息的完整业务项目。
+
+这个结论不能直接外推到 Onion Architecture、非 Spring Runtime、其他 ORM 或其他消息中间件；
+安全、可观测性、部署、容量和生产运维也不在本 Demo 的验证范围。Spring 7 复合注解弃用提示和
+`jmolecules-jackson` BeanPostProcessor 提前初始化警告仍需单独评估，不能通过兼容代码或屏蔽日志
+掩盖。后续验证应优先选择 Onion Architecture 变体，而不是继续增加费用审批业务复杂度。
