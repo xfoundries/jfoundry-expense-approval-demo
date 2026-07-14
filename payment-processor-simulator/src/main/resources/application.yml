@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: payment-processor-simulator
+  datasource:
+    url: ${PAYMENT_SIMULATOR_DB_URL:jdbc:postgresql://localhost:5432/payment_simulator}
+    username: ${PAYMENT_SIMULATOR_DB_USERNAME:payment_simulator}
+    password: ${PAYMENT_SIMULATOR_DB_PASSWORD:payment_simulator}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+payment-simulator:
+  single-payment-limit:
+    amount: 8000.00
+    currency: CNY
+  messaging:
+    kafka-listener-enabled: ${PAYMENT_SIMULATOR_KAFKA_LISTENER_ENABLED:false}
+
+jfoundry:
+  outbox:
+    dispatcher:
+      mode: ${JFOUNDRY_OUTBOX_DISPATCHER_MODE:none}

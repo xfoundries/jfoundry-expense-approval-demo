@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: expense-approval-service
+  datasource:
+    url: ${EXPENSE_APPROVAL_DB_URL:jdbc:postgresql://localhost:5432/expense_approval}
+    username: ${EXPENSE_APPROVAL_DB_USERNAME:expense_approval}
+    password: ${EXPENSE_APPROVAL_DB_PASSWORD:expense_approval}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${EXPENSE_APPROVAL_REDIS_HOST:localhost}
+      port: ${EXPENSE_APPROVAL_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  mvc:
+    problemdetails:
+      enabled: true
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+expense-approval:
+  messaging:
+    kafka-listener-enabled: ${EXPENSE_APPROVAL_KAFKA_LISTENER_ENABLED:false}
+
+jfoundry:
+  outbox:
+    dispatcher:
+      mode: ${JFOUNDRY_OUTBOX_DISPATCHER_MODE:none}
