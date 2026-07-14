@@ -231,6 +231,9 @@ Demo 从原来的单模块费用审批项目演进为四模块项目，并保持
 支撑 AI Agent 开发一个基于 DDD、Hexagonal Architecture 和可靠消息的完整业务项目。
 
 这个结论不能直接外推到 Onion Architecture、非 Spring Runtime、其他 ORM 或其他消息中间件；
-安全、可观测性、部署、容量和生产运维也不在本 Demo 的验证范围。Spring 7 复合注解弃用提示和
-`jmolecules-jackson` BeanPostProcessor 提前初始化警告仍需单独评估，不能通过兼容代码或屏蔽日志
-掩盖。后续验证应优先选择 Onion Architecture 变体，而不是继续增加费用审批业务复杂度。
+安全、可观测性、部署、容量和生产运维也不在本 Demo 的验证范围。Spring 7 复合注解属性映射问题
+已经由 jMolecules 上游的开放 [issue #153](https://github.com/xmolecules/jmolecules/issues/153) 跟踪，
+不应在 jfoundry 的框架中立模块中通过 Spring `@AliasFor` 兼容。Demo 暴露的 BeanPostProcessor
+提前初始化问题实际来自 jfoundry Spring AOP 自动配置，而不是 `jmolecules-jackson`；jfoundry
+现已统一使用 Spring 规范的 auto-proxy creator 并延迟解析 advisor interceptor。后续验证应优先
+选择 Onion Architecture 变体，而不是继续增加费用审批业务复杂度。
