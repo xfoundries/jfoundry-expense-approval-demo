@@ -3,7 +3,7 @@
 English | [中文](README_ZH.md)
 
 This is a business-light demo with a complete architecture path. It validates whether an AI agent
-can use the `domain-architecture` plugin and optional jfoundry support to move from complete
+can use the [domain-architecture-skills](https://github.com/xfoundries/domain-architecture-skills) plugin and optional [jfoundry](https://github.com/xfoundries/jfoundry) support to move from complete
 requirements through domain modeling, architecture decisions, implementation, and automated
 acceptance. The project deliberately avoids expanding organization structures, approval matrices,
 and other complex business concerns. Its focus is to verify that DDD, Hexagonal Architecture,
@@ -39,6 +39,28 @@ unconditionally start the complete container topology.
   restoring aggregates
 - CQRS does not use Event Sourcing; command tables and query projections remain in the same expense
   database
+
+The expense service keeps Hexagonal roles explicit while organizing the application core by
+business capability:
+
+```text
+expenseapproval
+├── domain                    aggregate, value objects, Repository, and domain policy
+├── application
+│   ├── claim/command         commands and handlers; port/in contains the primary command Port
+│   ├── claim/query           service and view models; port/in and port/out contain boundary contracts
+│   ├── approval              final approval; port/out contains the approved-amount Port
+│   ├── payment               payment projection; port/out contains its persistence Port
+│   └── identity              approval actor and role
+├── web                       HTTP Primary Adapter
+├── messaging                 Kafka Primary Adapter
+└── infrastructure            persistence, query, lock, and messaging Secondary Adapters
+```
+
+The application core is capability-first, with `port.in` and `port.out` nested only where directional
+contracts are needed. `UseCase`, `Port`, and `Adapter` are used here because this branch explicitly
+selects Hexagonal Architecture; they are not universal DDD naming rules and are not carried into the
+separately maintained Onion variant.
 
 Each mechanism has a distinct responsibility:
 
@@ -262,21 +284,25 @@ responsibility.
 The project also corrected package-level Port annotations on mixed packages, the absence of an
 independent Maven profile for E2E tests, and fixed sleeps. Kafka listeners and the Outbox dispatcher
 are now disabled for ordinary local startup and explicitly enabled in the complete integration
-environment.
+environment. The application core is now grouped by claim, approval, payment, and identity rather
+than by global `command`, `service`, `integration`, and `port` buckets; direction-specific Port
+packages now live below their owning capabilities. Domain policy moved into the domain, while
+Hexagonal Primary/Secondary Port and Adapter roles remain explicit at type level.
 
 ### Capability Boundaries
 
 The current evidence confirms that, within the validated stack and business complexity, jfoundry
 and the `domain-architecture` plugin are sufficient for an AI agent to develop a complete business
-project using DDD, Hexagonal Architecture, and reliable messaging.
+project using DDD, either of the separately validated Hexagonal or Onion architecture styles, and
+reliable messaging. The styles remain separate architecture choices rather than one combined model.
 
-This conclusion cannot be generalized directly to Onion Architecture, non-Spring runtimes, other
-ORMs, or other message brokers. Security, observability, deployment, capacity, and production
-operations are also outside this demo's validation scope. The Spring 7 composed-annotation
+This conclusion cannot be generalized directly to non-Spring runtimes, other ORMs, or other message
+brokers. Security, observability, deployment, capacity, and production operations are also outside
+this demo's validation scope. The Spring 7 composed-annotation
 attribute-mapping issue is tracked by the open jMolecules
 [issue #153](https://github.com/xmolecules/jmolecules/issues/153) and should not be worked around by
 adding Spring `@AliasFor` to jfoundry's runtime-neutral modules. The BeanPostProcessor early
 initialization issue exposed by the demo came from jfoundry Spring AOP auto-configuration rather
 than `jmolecules-jackson`; jfoundry now uses Spring's canonical auto-proxy creator and lazily
-resolves advisor interceptors. The next validation should prioritize an Onion Architecture variant
-instead of adding more expense-approval business complexity.
+resolves advisor interceptors. Further validation should prioritize a genuinely different runtime
+or infrastructure implementation instead of adding more expense-approval business complexity.

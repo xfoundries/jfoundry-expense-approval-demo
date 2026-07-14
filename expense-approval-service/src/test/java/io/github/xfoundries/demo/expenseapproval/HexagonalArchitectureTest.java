@@ -16,4 +16,7 @@ class HexagonalArchitectureTest {
 
     @ArchTest
     static final ArchTests aggregateRepositoryRules = JFoundryRules.aggregateRepositoryConventions();
+
+    @ArchTest
+    static final ArchTests cqrsRules = JFoundryRules.cqrs();
 }

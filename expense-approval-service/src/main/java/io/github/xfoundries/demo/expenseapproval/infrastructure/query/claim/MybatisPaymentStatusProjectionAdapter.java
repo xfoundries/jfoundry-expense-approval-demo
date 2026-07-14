@@ -1,13 +1,13 @@
 package io.github.xfoundries.demo.expenseapproval.infrastructure.query.claim;
 
-import io.github.xfoundries.demo.expenseapproval.application.port.out.PaymentStatusProjectionPort;
+import io.github.xfoundries.demo.expenseapproval.application.payment.port.out.PaymentStatusProjectionPort;
 import org.jfoundry.architecture.hexagonal.SecondaryAdapter;
 import org.jfoundry.infrastructure.persistence.PersistenceFailureTranslator;
 import org.jfoundry.infrastructure.persistence.PersistenceOperation;
 import org.springframework.stereotype.Repository;
 
-@Repository
 @SecondaryAdapter
+@Repository
 public class MybatisPaymentStatusProjectionAdapter implements PaymentStatusProjectionPort {
 
     private final PaymentStatusMapper mapper;

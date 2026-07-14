@@ -2,8 +2,8 @@ package io.github.xfoundries.demo.expenseapproval.boot;
 
 import javax.sql.DataSource;
 
-import io.github.xfoundries.demo.expenseapproval.application.command.handler.CreateExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.CreateExpenseClaimCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.support.PostgreSqlIntegrationTest;
 import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;

@@ -2,20 +2,20 @@ package io.github.xfoundries.demo.expenseapproval.web.claim;
 
 import java.net.URI;
 
-import io.github.xfoundries.demo.expenseapproval.application.command.Actor;
-import io.github.xfoundries.demo.expenseapproval.application.command.AddExpenseItemCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.ApproveExpenseClaimByFinanceCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.ApproveExpenseClaimByManagerCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.CreateExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.RejectExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.RemoveExpenseItemCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.ReopenExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.SubmitExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.UpdateExpenseItemCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.WithdrawExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommandDispatcher;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PageQuery;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ExpenseClaimQueryUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalActor;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.AddExpenseItemCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.ApproveExpenseClaimByFinanceCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.ApproveExpenseClaimByManagerCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.CreateExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.RejectExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.RemoveExpenseItemCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.ReopenExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.SubmitExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.UpdateExpenseItemCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.WithdrawExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PageQuery;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.port.in.ExpenseClaimQueryUseCase;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseItemId;
@@ -40,21 +40,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@PrimaryAdapter
 @RestController
 @RequestMapping("/api/claims")
-@PrimaryAdapter
 public class ExpenseClaimController {
 
     private final ClaimCommandDispatcher commandDispatcher;
-    private final ExpenseClaimQueryUseCase queryUseCase;
+    private final ExpenseClaimQueryUseCase expenseClaimQueries;
     private final RequestActorResolver actorResolver;
 
     public ExpenseClaimController(
             ClaimCommandDispatcher commandDispatcher,
-            ExpenseClaimQueryUseCase queryUseCase,
+            ExpenseClaimQueryUseCase expenseClaimQueries,
             RequestActorResolver actorResolver) {
         this.commandDispatcher = commandDispatcher;
-        this.queryUseCase = queryUseCase;
+        this.expenseClaimQueries = expenseClaimQueries;
         this.actorResolver = actorResolver;
     }
 
@@ -174,7 +174,7 @@ public class ExpenseClaimController {
             @RequestParam(required = false) ClaimState state,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ClaimResponses.from(queryUseCase.findMine(
+        return ClaimResponses.from(expenseClaimQueries.findMine(
                 actor(userId, role), state, new PageQuery(page, size)));
     }
 
@@ -184,7 +184,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Role") String role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ClaimResponses.from(queryUseCase.findManagerQueue(
+        return ClaimResponses.from(expenseClaimQueries.findManagerQueue(
                 actor(userId, role), new PageQuery(page, size)));
     }
 
@@ -194,7 +194,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Role") String role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ClaimResponses.from(queryUseCase.findFinanceQueue(
+        return ClaimResponses.from(expenseClaimQueries.findFinanceQueue(
                 actor(userId, role), new PageQuery(page, size)));
     }
 
@@ -203,11 +203,11 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        return ClaimResponses.from(queryUseCase.getDetail(
+        return ClaimResponses.from(expenseClaimQueries.getDetail(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
     }
 
-    private Actor actor(String userId, String role) {
+    private ApprovalActor actor(String userId, String role) {
         return actorResolver.resolve(userId, role);
     }
 

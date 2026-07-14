@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.xfoundries.demo.contracts.EventEnvelope;
 import io.github.xfoundries.demo.contracts.ReimbursementPaidV1;
 import io.github.xfoundries.demo.contracts.ReimbursementPaymentFailedV1;
-import io.github.xfoundries.demo.expenseapproval.application.integration.PaymentResultProjector;
+import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentResultProjector;
 import org.jfoundry.architecture.hexagonal.PrimaryAdapter;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-@Component
 @PrimaryAdapter
+@Component
 public class PaymentResultKafkaListener {
 
     private final ObjectMapper objectMapper;

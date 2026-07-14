@@ -5,13 +5,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.ActionView;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.ClaimDetail;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.ClaimSummary;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.ItemView;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PageResult;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PaymentDisplayStatus;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PaymentView;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ActionView;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ClaimDetail;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ClaimSummary;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ItemView;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PageResult;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PaymentDisplayStatus;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PaymentView;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 
 public final class ClaimResponses {

@@ -4,13 +4,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-import io.github.xfoundries.demo.expenseapproval.application.command.CreateExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.command.SubmitExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimCommandDispatcher;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.ClaimSummary;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ClaimViews.PageResult;
-import io.github.xfoundries.demo.expenseapproval.application.port.in.ExpenseClaimQueryUseCase;
-import io.github.xfoundries.demo.expenseapproval.application.service.ClaimAccessDeniedException;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.CreateExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.SubmitExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ClaimSummary;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PageResult;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.port.in.ExpenseClaimQueryUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.ClaimAccessDeniedException;
 import io.github.xfoundries.demo.expenseapproval.boot.ExpenseApprovalApplication;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
@@ -43,7 +43,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
 
     @Autowired MockMvc mockMvc;
     @MockitoBean ClaimCommandDispatcher commandDispatcher;
-    @MockitoBean ExpenseClaimQueryUseCase queryUseCase;
+    @MockitoBean ExpenseClaimQueryUseCase expenseClaimQueries;
 
     @Test
     void createsClaimAndReturnsLocation() throws Exception {
@@ -109,7 +109,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
     void notFoundAndAccessDeniedBecome404And403() throws Exception {
         doThrow(new NotFoundException("Expense claim not found"))
                 .doThrow(new ClaimAccessDeniedException("Access denied"))
-                .when(queryUseCase).getDetail(any(), any());
+                .when(expenseClaimQueries).getDetail(any(), any());
         mockMvc.perform(get("/api/claims/missing")
                         .header("X-User-Id", "employee-1")
                         .header("X-User-Role", "EMPLOYEE"))
@@ -125,7 +125,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
 
     @Test
     void listsOwnedClaimsWithStablePageShape() throws Exception {
-        when(queryUseCase.findMine(any(), eq(ClaimState.DRAFT), any()))
+        when(expenseClaimQueries.findMine(any(), eq(ClaimState.DRAFT), any()))
                 .thenReturn(new PageResult<>(List.of(new ClaimSummary(
                         "claim-1", "employee-1", "Draft", ClaimState.DRAFT,
                         new BigDecimal("0.00"), Instant.parse("2026-07-12T08:00:00Z"))),

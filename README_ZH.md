@@ -3,7 +3,7 @@
 中文 | [English](README.md)
 
 这是一个业务轻量、架构链路完整的 Demo，用于验证 AI Agent 能否借助
-`domain-architecture` 插件和可选的 jfoundry，从完整需求出发完成领域建模、架构决策、
+[domain-architecture-skills](https://github.com/xfoundries/domain-architecture-skills) 插件和可选的 [jfoundry](https://github.com/xfoundries/jfoundry)，从完整需求出发完成领域建模、架构决策、
 实现与自动化验收。项目刻意不扩展组织、审批矩阵等复杂业务，重点是验证 DDD、六边形架构、
 CQRS、Outbox、Inbox、Kafka、分布式锁和持久化能力能否正确组合。
 
@@ -33,6 +33,26 @@ jfoundry-expense-approval-demo/
 - 命令侧使用 `ExpenseClaim` 聚合和显式 Command/Handler/Dispatcher
 - 查询侧使用面向视图的 MyBatis 查询与支付状态投影，不还原聚合
 - CQRS 不使用 Event Sourcing，命令表和查询投影仍位于同一个费用数据库
+
+费用服务在明确表达 Hexagonal 角色的同时，按业务能力组织应用核心：
+
+```text
+expenseapproval
+├── domain                    聚合、值对象、Repository 与领域策略
+├── application
+│   ├── claim/command         命令与处理器；port/in 放置命令 Primary Port
+│   ├── claim/query           查询服务与视图模型；port/in 与 port/out 放置边界契约
+│   ├── approval              最终审批；port/out 放置已审批金额 Port
+│   ├── payment               支付投影；port/out 放置其持久化 Port
+│   └── identity              审批参与者与角色
+├── web                       HTTP Primary Adapter
+├── messaging                 Kafka Primary Adapter
+└── infrastructure            持久化、查询、锁与消息 Secondary Adapter
+```
+
+应用核心以业务能力优先，只在需要方向契约时向下设置 `port.in` 和 `port.out`。本分支使用
+`UseCase`、`Port`、`Adapter`，是因为它明确选择了 Hexagonal Architecture；这些名称不是通用
+DDD 规则，也不会被照搬到单独维护的 Onion 变体中。
 
 各机制承担不同职责：
 
@@ -226,16 +246,20 @@ Demo 从原来的单模块费用审批项目演进为四模块项目，并保持
 
 同时修正了混合包使用包级 Port 注解、E2E 无独立 Maven profile、固定 sleep 等项目表达问题，
 并让 Kafka listener 与 Outbox dispatcher 在普通本地启动时默认关闭、在完整集成环境中显式开启。
+应用核心现在按报销单、审批、支付和身份组织，不再使用全局 `command`、`service`、`integration`、
+`port` 技术桶，方向性的 Port 包改为位于其所属业务能力之下；领域策略回到 domain，同时在类型级
+继续明确表达 Hexagonal 的 Primary/Secondary Port 与 Adapter 角色。
 
 ### 能力边界
 
 当前可以确认的是：在已经验证的技术栈和业务复杂度内，jfoundry 与 `domain-architecture` 插件足以
-支撑 AI Agent 开发一个基于 DDD、Hexagonal Architecture 和可靠消息的完整业务项目。
+支撑 AI Agent 开发一个基于 DDD、分别经过验证的 Hexagonal 或 Onion 架构风格，以及可靠消息的
+完整业务项目。两种风格仍是独立的架构选择，不是一套合并模型。
 
-这个结论不能直接外推到 Onion Architecture、非 Spring Runtime、其他 ORM 或其他消息中间件；
+这个结论不能直接外推到非 Spring Runtime、其他 ORM 或其他消息中间件；
 安全、可观测性、部署、容量和生产运维也不在本 Demo 的验证范围。Spring 7 复合注解属性映射问题
 已经由 jMolecules 上游的开放 [issue #153](https://github.com/xmolecules/jmolecules/issues/153) 跟踪，
 不应在 jfoundry 的框架中立模块中通过 Spring `@AliasFor` 兼容。Demo 暴露的 BeanPostProcessor
 提前初始化问题实际来自 jfoundry Spring AOP 自动配置，而不是 `jmolecules-jackson`；jfoundry
 现已统一使用 Spring 规范的 auto-proxy creator 并延迟解析 advisor interceptor。后续验证应优先
-选择 Onion Architecture 变体，而不是继续增加费用审批业务复杂度。
+选择真正不同的 Runtime 或基础设施实现，而不是继续增加费用审批业务复杂度。

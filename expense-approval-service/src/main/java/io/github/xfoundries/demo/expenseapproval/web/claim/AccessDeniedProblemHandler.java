@@ -1,6 +1,6 @@
 package io.github.xfoundries.demo.expenseapproval.web.claim;
 
-import io.github.xfoundries.demo.expenseapproval.application.service.ClaimAccessDeniedException;
+import io.github.xfoundries.demo.expenseapproval.application.claim.query.ClaimAccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
