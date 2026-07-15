@@ -1,4 +1,4 @@
-package io.github.xfoundries.demo.expenseapproval.adapter.out.query.claim;
+package io.github.xfoundries.demo.expenseapproval.adapter.out.lookup.claim;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;

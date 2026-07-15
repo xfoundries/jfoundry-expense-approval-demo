@@ -6,7 +6,8 @@ import java.util.List;
 
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.CreateExpenseClaimCommand;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.SubmitExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.CreateExpenseClaimUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.SubmitExpenseClaimUseCase;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.ClaimSummary;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PageResult;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.port.in.ExpenseClaimQueryUseCase;
@@ -42,12 +43,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
 
     @Autowired MockMvc mockMvc;
-    @MockitoBean ClaimCommandDispatcher commandDispatcher;
+    @MockitoBean CreateExpenseClaimUseCase createExpenseClaim;
+    @MockitoBean SubmitExpenseClaimUseCase submitExpenseClaim;
     @MockitoBean ExpenseClaimQueryUseCase expenseClaimQueries;
 
     @Test
     void createsClaimAndReturnsLocation() throws Exception {
-        when(commandDispatcher.dispatch(any(CreateExpenseClaimCommand.class)))
+        when(createExpenseClaim.create(any(CreateExpenseClaimCommand.class)))
                 .thenReturn(ExpenseClaimId.of("claim-1"));
 
         mockMvc.perform(post("/api/claims")
@@ -58,7 +60,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/claims/claim-1"));
 
-        verify(commandDispatcher).dispatch(any(CreateExpenseClaimCommand.class));
+        verify(createExpenseClaim).create(any(CreateExpenseClaimCommand.class));
     }
 
     @Test
@@ -88,7 +90,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
     @Test
     void jfoundryDomainExceptionsBecome409And422() throws Exception {
         doThrow(new DomainStateException("Wrong state"))
-                .when(commandDispatcher).dispatch(any(SubmitExpenseClaimCommand.class));
+                .when(submitExpenseClaim).submit(any(SubmitExpenseClaimCommand.class));
 
         mockMvc.perform(post("/api/claims/claim-1/submit")
                         .header("X-User-Id", "employee-1")
@@ -97,7 +99,7 @@ class ExpenseClaimControllerTest extends PostgreSqlIntegrationTest {
                 .andExpect(jsonPath("$.status").value(409));
 
         doThrow(new DomainRuleViolationException("Rule rejected"))
-                .when(commandDispatcher).dispatch(any(SubmitExpenseClaimCommand.class));
+                .when(submitExpenseClaim).submit(any(SubmitExpenseClaimCommand.class));
         mockMvc.perform(post("/api/claims/claim-1/submit")
                         .header("X-User-Id", "employee-1")
                         .header("X-User-Role", "EMPLOYEE"))

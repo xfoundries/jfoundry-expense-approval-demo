@@ -2,24 +2,26 @@ package io.github.xfoundries.demo.expenseapproval.application.claim.command.hand
 
 import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalRole;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.ReopenExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ReopenExpenseClaimUseCase;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
 import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
-public class ReopenExpenseClaimCommandHandler {
+public class ReopenExpenseClaimCommandHandler implements ReopenExpenseClaimUseCase {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public ReopenExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public ReopenExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
+    @Override
     @CommandHandler
     @ApplicationTransactional
-    public void handle(ReopenExpenseClaimCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
-        claim.reopen(command.actor().userId(), context.now());
-        context.save(claim);
+    public void reopen(ReopenExpenseClaimCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
+        claim.reopen(command.actor().userId(), support.now());
+        support.save(claim);
     }
 }

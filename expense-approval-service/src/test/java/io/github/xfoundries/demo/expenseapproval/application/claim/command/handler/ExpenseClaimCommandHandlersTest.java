@@ -56,11 +56,11 @@ class ExpenseClaimCommandHandlersTest {
     @Mock
     private FinalApprovalCoordinator finalApprovalCoordinator;
 
-    private ClaimCommandContext context;
+    private ExpenseClaimCommandSupport support;
 
     @BeforeEach
     void setUp() {
-        context = new ClaimCommandContext(repository, CLOCK);
+        support = new ExpenseClaimCommandSupport(repository, CLOCK);
     }
 
     @Test
@@ -69,14 +69,14 @@ class ExpenseClaimCommandHandlersTest {
                 ExpenseClaimId.of("claim-items"), EMPLOYEE_ID, "Visit", NOW.minusSeconds(1));
         when(repository.findById(claim.id())).thenReturn(claim);
 
-        ExpenseItemId itemId = new AddExpenseItemCommandHandler(context).handle(
+        ExpenseItemId itemId = new AddExpenseItemCommandHandler(support).addItem(
                 new AddExpenseItemCommand(EMPLOYEE, claim.id(), LocalDate.of(2026, 7, 10),
                         ExpenseCategory.TRAVEL, new BigDecimal("10.00"), "Taxi", null));
-        new UpdateExpenseItemCommandHandler(context).handle(
+        new UpdateExpenseItemCommandHandler(support).updateItem(
                 new UpdateExpenseItemCommand(EMPLOYEE, claim.id(), itemId,
                         LocalDate.of(2026, 7, 11), ExpenseCategory.MEAL,
                         new BigDecimal("20.00"), "Dinner", "receipt-1"));
-        new RemoveExpenseItemCommandHandler(context).handle(
+        new RemoveExpenseItemCommandHandler(support).removeItem(
                 new RemoveExpenseItemCommand(EMPLOYEE, claim.id(), itemId));
 
         assertThat(claim.items()).isEmpty();
@@ -93,11 +93,11 @@ class ExpenseClaimCommandHandlersTest {
         when(repository.findById(withdrawn.id())).thenReturn(withdrawn);
         when(repository.findById(rejected.id())).thenReturn(rejected);
 
-        new SubmitExpenseClaimCommandHandler(context).handle(
+        new SubmitExpenseClaimCommandHandler(support).submit(
                 new SubmitExpenseClaimCommand(EMPLOYEE, withdrawn.id()));
-        new WithdrawExpenseClaimCommandHandler(context).handle(
+        new WithdrawExpenseClaimCommandHandler(support).withdraw(
                 new WithdrawExpenseClaimCommand(EMPLOYEE, withdrawn.id()));
-        new ReopenExpenseClaimCommandHandler(context).handle(
+        new ReopenExpenseClaimCommandHandler(support).reopen(
                 new ReopenExpenseClaimCommand(EMPLOYEE, rejected.id()));
 
         assertThat(withdrawn.state()).isEqualTo(ClaimState.WITHDRAWN);
@@ -114,8 +114,8 @@ class ExpenseClaimCommandHandlersTest {
         ApproveExpenseClaimByFinanceCommand finance =
                 new ApproveExpenseClaimByFinanceCommand(FINANCE, id);
 
-        new ApproveExpenseClaimByManagerCommandHandler(finalApprovalCoordinator).handle(manager);
-        new ApproveExpenseClaimByFinanceCommandHandler(finalApprovalCoordinator).handle(finance);
+        new ApproveExpenseClaimByManagerCommandHandler(finalApprovalCoordinator).approveByManager(manager);
+        new ApproveExpenseClaimByFinanceCommandHandler(finalApprovalCoordinator).approveByFinance(finance);
 
         verify(finalApprovalCoordinator).approveByManager(manager);
         verify(finalApprovalCoordinator).approveByFinance(finance);
@@ -125,14 +125,14 @@ class ExpenseClaimCommandHandlersTest {
     void rejectionRoleMustMatchCurrentApprovalStage() {
         ExpenseClaim claim = submittedClaim("claim-reject", "2000.01");
         when(repository.findById(claim.id())).thenReturn(claim);
-        RejectExpenseClaimCommandHandler handler = new RejectExpenseClaimCommandHandler(context);
+        RejectExpenseClaimCommandHandler handler = new RejectExpenseClaimCommandHandler(support);
 
-        assertThatThrownBy(() -> handler.handle(
+        assertThatThrownBy(() -> handler.reject(
                 new RejectExpenseClaimCommand(FINANCE, claim.id(), "Missing receipt")))
                 .isInstanceOf(InvalidArgumentException.class)
                 .hasMessageContaining("MANAGER");
 
-        handler.handle(new RejectExpenseClaimCommand(MANAGER, claim.id(), "Missing receipt"));
+        handler.reject(new RejectExpenseClaimCommand(MANAGER, claim.id(), "Missing receipt"));
         assertThat(claim.state()).isEqualTo(ClaimState.REJECTED);
         verify(repository).modify(claim);
     }

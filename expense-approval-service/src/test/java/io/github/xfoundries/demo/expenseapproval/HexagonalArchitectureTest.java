@@ -5,6 +5,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.junit.ArchTests;
 import com.tngtech.archunit.lang.ArchRule;
 import io.github.xfoundries.demo.expenseapproval.application.payment.port.out.PaymentStatusProjectionPort;
+import io.github.xfoundries.demo.expenseapproval.application.approval.port.out.ApprovedExpenseAmountPort;
 import org.jfoundry.test.archunit.HexagonalAdapterPackageConvention;
 import org.jfoundry.test.archunit.JFoundryRules;
 
@@ -24,6 +25,11 @@ class HexagonalArchitectureTest {
     static final ArchRule paymentStatusProjectionAdapterPackage = classes()
             .that().implement(PaymentStatusProjectionPort.class)
             .should().resideInAPackage("..adapter.out.projection..");
+
+    @ArchTest
+    static final ArchRule approvedExpenseAmountLookupAdapterPackage = classes()
+            .that().implement(ApprovedExpenseAmountPort.class)
+            .should().resideInAPackage("..adapter.out.lookup..");
 
     @ArchTest
     static final ArchTests jmoleculesDddRules = JFoundryRules.jmoleculesDdd();

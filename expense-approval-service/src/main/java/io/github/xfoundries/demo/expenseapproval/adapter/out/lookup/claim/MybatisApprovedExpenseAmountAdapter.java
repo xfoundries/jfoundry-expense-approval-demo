@@ -1,11 +1,11 @@
-package io.github.xfoundries.demo.expenseapproval.adapter.out.query.claim;
+package io.github.xfoundries.demo.expenseapproval.adapter.out.lookup.claim;
 
 import java.time.Instant;
 
+import io.github.xfoundries.demo.expenseapproval.adapter.out.persistence.claim.ExpenseClaimMapper;
 import io.github.xfoundries.demo.expenseapproval.application.approval.port.out.ApprovedExpenseAmountPort;
 import io.github.xfoundries.demo.expenseapproval.domain.model.Money;
 import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
-import io.github.xfoundries.demo.expenseapproval.adapter.out.persistence.claim.ExpenseClaimMapper;
 import org.jfoundry.architecture.hexagonal.SecondaryAdapter;
 import org.jfoundry.infrastructure.persistence.AbstractPersistenceAdapter;
 import org.springframework.stereotype.Repository;

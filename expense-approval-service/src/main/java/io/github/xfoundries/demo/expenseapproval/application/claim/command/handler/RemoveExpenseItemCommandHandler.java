@@ -2,24 +2,26 @@ package io.github.xfoundries.demo.expenseapproval.application.claim.command.hand
 
 import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalRole;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.RemoveExpenseItemCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.RemoveExpenseItemUseCase;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
 import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
-public class RemoveExpenseItemCommandHandler {
+public class RemoveExpenseItemCommandHandler implements RemoveExpenseItemUseCase {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public RemoveExpenseItemCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public RemoveExpenseItemCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
+    @Override
     @CommandHandler
     @ApplicationTransactional
-    public void handle(RemoveExpenseItemCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
-        claim.removeItem(command.actor().userId(), command.itemId(), context.now());
-        context.save(claim);
+    public void removeItem(RemoveExpenseItemCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
+        claim.removeItem(command.actor().userId(), command.itemId(), support.now());
+        support.save(claim);
     }
 }

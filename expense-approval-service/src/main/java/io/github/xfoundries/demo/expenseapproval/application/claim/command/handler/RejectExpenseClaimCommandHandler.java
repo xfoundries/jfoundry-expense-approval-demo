@@ -2,6 +2,7 @@ package io.github.xfoundries.demo.expenseapproval.application.claim.command.hand
 
 import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalRole;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.RejectExpenseClaimCommand;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.RejectExpenseClaimUseCase;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
 import io.github.xfoundries.demo.expenseapproval.domain.model.RejectionReason;
@@ -9,23 +10,24 @@ import org.jfoundry.application.exception.InvalidArgumentException;
 import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
-public class RejectExpenseClaimCommandHandler {
+public class RejectExpenseClaimCommandHandler implements RejectExpenseClaimUseCase {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public RejectExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public RejectExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
+    @Override
     @CommandHandler
     @ApplicationTransactional
-    public void handle(RejectExpenseClaimCommand command) {
-        ExpenseClaim claim = context.load(command.claimId());
+    public void reject(RejectExpenseClaimCommand command) {
+        ExpenseClaim claim = support.load(command.claimId());
         ApprovalRole requiredRole = requiredRole(claim.state());
-        context.requireRole(command.actor(), requiredRole);
+        support.requireRole(command.actor(), requiredRole);
         claim.reject(
-                command.actor().userId(), RejectionReason.of(command.reason()), context.now());
-        context.save(claim);
+                command.actor().userId(), RejectionReason.of(command.reason()), support.now());
+        support.save(claim);
     }
 
     private static ApprovalRole requiredRole(ClaimState state) {

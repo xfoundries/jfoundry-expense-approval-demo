@@ -11,12 +11,12 @@ import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimR
 import org.jfoundry.application.exception.InvalidArgumentException;
 import org.jfoundry.application.exception.NotFoundException;
 
-public final class ClaimCommandContext {
+public final class ExpenseClaimCommandSupport {
 
     private final ExpenseClaimRepository repository;
     private final Clock clock;
 
-    public ClaimCommandContext(ExpenseClaimRepository repository, Clock clock) {
+    public ExpenseClaimCommandSupport(ExpenseClaimRepository repository, Clock clock) {
         this.repository = repository;
         this.clock = clock;
     }

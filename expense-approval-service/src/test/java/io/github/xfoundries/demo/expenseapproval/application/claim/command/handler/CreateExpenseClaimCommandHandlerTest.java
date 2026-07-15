@@ -36,10 +36,10 @@ class CreateExpenseClaimCommandHandlerTest {
     @Test
     void commandAndHandlerExpressCqrsAndTransactionBoundary() throws Exception {
         assertThat(CreateExpenseClaimCommand.class).hasAnnotation(Command.class);
-        Method handle = CreateExpenseClaimCommandHandler.class
-                .getDeclaredMethod("handle", CreateExpenseClaimCommand.class);
-        assertThat(handle.isAnnotationPresent(CommandHandler.class)).isTrue();
-        assertThat(handle.isAnnotationPresent(ApplicationTransactional.class)).isTrue();
+        Method create = CreateExpenseClaimCommandHandler.class
+                .getDeclaredMethod("create", CreateExpenseClaimCommand.class);
+        assertThat(create.isAnnotationPresent(CommandHandler.class)).isTrue();
+        assertThat(create.isAnnotationPresent(ApplicationTransactional.class)).isTrue();
     }
 
     @Test
@@ -48,7 +48,7 @@ class CreateExpenseClaimCommandHandlerTest {
                 repository, Clock.fixed(NOW, ZoneOffset.UTC));
         ApprovalActor employee = new ApprovalActor(UserId.of("employee-1"), ApprovalRole.EMPLOYEE);
 
-        ExpenseClaimId id = handler.handle(new CreateExpenseClaimCommand(employee, "Customer visit"));
+        ExpenseClaimId id = handler.create(new CreateExpenseClaimCommand(employee, "Customer visit"));
 
         ArgumentCaptor<ExpenseClaim> captor = ArgumentCaptor.forClass(ExpenseClaim.class);
         verify(repository).add(captor.capture());

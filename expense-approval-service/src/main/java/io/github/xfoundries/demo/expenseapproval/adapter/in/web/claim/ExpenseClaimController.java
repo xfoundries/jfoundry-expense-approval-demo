@@ -13,7 +13,16 @@ import io.github.xfoundries.demo.expenseapproval.application.claim.command.Reope
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.SubmitExpenseClaimCommand;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.UpdateExpenseItemCommand;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.WithdrawExpenseClaimCommand;
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ClaimCommandDispatcher;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.AddExpenseItemUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ApproveExpenseClaimByFinanceUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ApproveExpenseClaimByManagerUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.CreateExpenseClaimUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.RejectExpenseClaimUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.RemoveExpenseItemUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.ReopenExpenseClaimUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.SubmitExpenseClaimUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.UpdateExpenseItemUseCase;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.port.in.WithdrawExpenseClaimUseCase;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PageQuery;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.port.in.ExpenseClaimQueryUseCase;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
@@ -45,15 +54,42 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/claims")
 public class ExpenseClaimController {
 
-    private final ClaimCommandDispatcher commandDispatcher;
+    private final CreateExpenseClaimUseCase createExpenseClaim;
+    private final AddExpenseItemUseCase addExpenseItem;
+    private final UpdateExpenseItemUseCase updateExpenseItem;
+    private final RemoveExpenseItemUseCase removeExpenseItem;
+    private final SubmitExpenseClaimUseCase submitExpenseClaim;
+    private final WithdrawExpenseClaimUseCase withdrawExpenseClaim;
+    private final ReopenExpenseClaimUseCase reopenExpenseClaim;
+    private final ApproveExpenseClaimByManagerUseCase approveExpenseClaimByManager;
+    private final ApproveExpenseClaimByFinanceUseCase approveExpenseClaimByFinance;
+    private final RejectExpenseClaimUseCase rejectExpenseClaim;
     private final ExpenseClaimQueryUseCase expenseClaimQueries;
     private final RequestActorResolver actorResolver;
 
     public ExpenseClaimController(
-            ClaimCommandDispatcher commandDispatcher,
+            CreateExpenseClaimUseCase createExpenseClaim,
+            AddExpenseItemUseCase addExpenseItem,
+            UpdateExpenseItemUseCase updateExpenseItem,
+            RemoveExpenseItemUseCase removeExpenseItem,
+            SubmitExpenseClaimUseCase submitExpenseClaim,
+            WithdrawExpenseClaimUseCase withdrawExpenseClaim,
+            ReopenExpenseClaimUseCase reopenExpenseClaim,
+            ApproveExpenseClaimByManagerUseCase approveExpenseClaimByManager,
+            ApproveExpenseClaimByFinanceUseCase approveExpenseClaimByFinance,
+            RejectExpenseClaimUseCase rejectExpenseClaim,
             ExpenseClaimQueryUseCase expenseClaimQueries,
             RequestActorResolver actorResolver) {
-        this.commandDispatcher = commandDispatcher;
+        this.createExpenseClaim = createExpenseClaim;
+        this.addExpenseItem = addExpenseItem;
+        this.updateExpenseItem = updateExpenseItem;
+        this.removeExpenseItem = removeExpenseItem;
+        this.submitExpenseClaim = submitExpenseClaim;
+        this.withdrawExpenseClaim = withdrawExpenseClaim;
+        this.reopenExpenseClaim = reopenExpenseClaim;
+        this.approveExpenseClaimByManager = approveExpenseClaimByManager;
+        this.approveExpenseClaimByFinance = approveExpenseClaimByFinance;
+        this.rejectExpenseClaim = rejectExpenseClaim;
         this.expenseClaimQueries = expenseClaimQueries;
         this.actorResolver = actorResolver;
     }
@@ -63,7 +99,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody CreateClaimRequest request) {
-        ExpenseClaimId id = commandDispatcher.dispatch(
+        ExpenseClaimId id = createExpenseClaim.create(
                 new CreateExpenseClaimCommand(actor(userId, role), request.title()));
         return ResponseEntity.created(URI.create("/api/claims/" + id.value())).build();
     }
@@ -74,7 +110,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId,
             @Valid @RequestBody ExpenseItemRequest request) {
-        commandDispatcher.dispatch(new AddExpenseItemCommand(
+        addExpenseItem.addItem(new AddExpenseItemCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId),
                 request.expenseDate(), request.category(), request.amount(),
                 request.description(), request.receiptReference()));
@@ -88,7 +124,7 @@ public class ExpenseClaimController {
             @PathVariable String claimId,
             @PathVariable String itemId,
             @Valid @RequestBody ExpenseItemRequest request) {
-        commandDispatcher.dispatch(new UpdateExpenseItemCommand(
+        updateExpenseItem.updateItem(new UpdateExpenseItemCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId), ExpenseItemId.of(itemId),
                 request.expenseDate(), request.category(), request.amount(),
                 request.description(), request.receiptReference()));
@@ -101,7 +137,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId,
             @PathVariable String itemId) {
-        commandDispatcher.dispatch(new RemoveExpenseItemCommand(
+        removeExpenseItem.removeItem(new RemoveExpenseItemCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId), ExpenseItemId.of(itemId)));
         return ResponseEntity.noContent().build();
     }
@@ -111,7 +147,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        commandDispatcher.dispatch(new SubmitExpenseClaimCommand(
+        submitExpenseClaim.submit(new SubmitExpenseClaimCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
         return ResponseEntity.noContent().build();
     }
@@ -121,7 +157,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        commandDispatcher.dispatch(new WithdrawExpenseClaimCommand(
+        withdrawExpenseClaim.withdraw(new WithdrawExpenseClaimCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
         return ResponseEntity.noContent().build();
     }
@@ -131,7 +167,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        commandDispatcher.dispatch(new ReopenExpenseClaimCommand(
+        reopenExpenseClaim.reopen(new ReopenExpenseClaimCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
         return ResponseEntity.noContent().build();
     }
@@ -141,7 +177,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        commandDispatcher.dispatch(new ApproveExpenseClaimByManagerCommand(
+        approveExpenseClaimByManager.approveByManager(new ApproveExpenseClaimByManagerCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
         return ResponseEntity.noContent().build();
     }
@@ -151,7 +187,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId) {
-        commandDispatcher.dispatch(new ApproveExpenseClaimByFinanceCommand(
+        approveExpenseClaimByFinance.approveByFinance(new ApproveExpenseClaimByFinanceCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId)));
         return ResponseEntity.noContent().build();
     }
@@ -162,7 +198,7 @@ public class ExpenseClaimController {
             @RequestHeader("X-User-Role") String role,
             @PathVariable String claimId,
             @Valid @RequestBody RejectClaimRequest request) {
-        commandDispatcher.dispatch(new RejectExpenseClaimCommand(
+        rejectExpenseClaim.reject(new RejectExpenseClaimCommand(
                 actor(userId, role), ExpenseClaimId.of(claimId), request.reason()));
         return ResponseEntity.noContent().build();
     }
