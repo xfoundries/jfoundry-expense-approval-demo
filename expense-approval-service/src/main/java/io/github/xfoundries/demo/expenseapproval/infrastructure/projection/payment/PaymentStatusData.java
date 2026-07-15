@@ -1,4 +1,4 @@
-package io.github.xfoundries.demo.expenseapproval.infrastructure.query.claim;
+package io.github.xfoundries.demo.expenseapproval.infrastructure.projection.payment;
 
 import java.time.Instant;
 

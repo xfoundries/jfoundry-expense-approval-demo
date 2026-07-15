@@ -26,6 +26,8 @@ import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.clai
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseClaimMapper;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemData;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemMapper;
+import io.github.xfoundries.demo.expenseapproval.infrastructure.projection.payment.PaymentStatusData;
+import io.github.xfoundries.demo.expenseapproval.infrastructure.projection.payment.PaymentStatusMapper;
 import org.jfoundry.infrastructure.persistence.AbstractPersistenceAdapter;
 import org.springframework.stereotype.Repository;
 

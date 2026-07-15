@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(info = @Info(
         title = "团队费用报销审批 API",
         version = "v1",
-        description = "用于验证领域建模、Hexagonal Architecture 和 jfoundry 落地的完整 Demo"))
+        description = "用于验证领域建模、Onion Simple Architecture 和 jfoundry 落地的完整 Demo"))
 public class OpenApiConfiguration {
 }
-
