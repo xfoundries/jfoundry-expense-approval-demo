@@ -2,24 +2,41 @@
 
 English | [中文](README_ZH.md)
 
+> **Current branch:** this README and the checked-out `main` branch describe the Hexagonal
+> Architecture implementation. The Onion Simple implementation is maintained separately on
+> [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture).
+
 This is a business-light demo with a complete architecture path. It validates whether an AI agent
 can use the [domain-architecture-skills](https://github.com/xfoundries/domain-architecture-skills) plugin and optional [jfoundry](https://github.com/xfoundries/jfoundry) support to move from complete
 requirements through domain modeling, architecture decisions, implementation, and automated
 acceptance. The project deliberately avoids expanding organization structures, approval matrices,
-and other complex business concerns. Its focus is to verify that DDD, Hexagonal Architecture,
-CQRS, Outbox, Inbox, Kafka, distributed locking, and persistence can be combined correctly.
+and other complex business concerns. On the current `main` branch, its focus is to verify that DDD,
+Hexagonal Architecture, CQRS, Outbox, Inbox, Kafka, distributed locking, and persistence can be
+combined correctly. The separate Onion branch reuses the same business and acceptance baseline to
+validate Onion Simple without changing the architecture of `main`.
 
 This project explicitly selects a local jfoundry build to validate the plugin's `using-jfoundry`
 landing phase. **jfoundry is not required by the `domain-architecture` plugin.** Projects that do
 not use jfoundry can still use the domain modeling and architecture guidance capabilities
 independently.
 
+## Architecture Variants
+
+| Branch | Architecture style | Status in this README |
+|--------|--------------------|-----------------------|
+| `main` | Hexagonal Architecture | Current implementation on the repository's default branch; package structure and runtime descriptions below refer to this branch. |
+| [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture) | Onion Simple Architecture | Separately maintained validation variant with its own README and architecture vocabulary. |
+
+Unless a section explicitly says "cross-variant" or names the Onion branch, `application`, Port,
+Adapter, package, and dependency descriptions in this README refer to the current Hexagonal
+`main` branch.
+
 ## Project Structure
 
 ```text
 jfoundry-expense-approval-demo/
 ├── integration-contracts/          # Versioned cross-process contracts; no shared domain model
-├── expense-approval-service/       # Expense approval service using DDD and Hexagonal Architecture
+├── expense-approval-service/       # DDD expense service; Hexagonal on main, Onion Simple on its variant branch
 ├── payment-processor-simulator/    # External payment simulator with deliberately simple business logic
 └── end-to-end-tests/               # Complete path through both applications and real middleware
 ```
@@ -28,7 +45,7 @@ The root project is a Maven aggregator. Regular builds include the first three m
 `end-to-end-tests` is enabled only by the `e2e` profile so that ordinary module builds do not
 unconditionally start the complete container topology.
 
-## Architecture and Technology
+## Architecture and Technology (`main`: Hexagonal)
 
 - Java 21, Maven, Spring Boot 3.5.16, jfoundry 1.0.0-SNAPSHOT
 - MyBatis-Plus, PostgreSQL 17, Flyway
@@ -59,8 +76,11 @@ expenseapproval
 
 The application core is capability-first, with `port.in` and `port.out` nested only where directional
 contracts are needed. `UseCase`, `Port`, and `Adapter` are used here because this branch explicitly
-selects Hexagonal Architecture; they are not universal DDD naming rules and are not carried into the
-separately maintained Onion variant.
+selects Hexagonal Architecture; they are not universal DDD naming rules.
+
+`ClaimViews` belongs to the neutral `application.claim.query.view` package because both inbound and
+outbound query contracts use it. It is owned by the application capability, not by either Port
+direction, the domain model, or an infrastructure implementation.
 
 Each mechanism has a distinct responsibility:
 
@@ -213,12 +233,20 @@ or `FAILED`.
 
 ## Validation Conclusions and Capability Boundaries
 
-### Overall Assessment
+### Current Branch Assessment
 
 Within the selected Java 21, Spring Boot, MyBatis-Plus, PostgreSQL, Kafka, and Redis stack, this demo
-proves that the `domain-architecture` plugin and optional jfoundry support can guide an AI agent from
-business requirements, domain modeling, and a Hexagonal Architecture decision through domain
-implementation, CQRS, Outbox, Inbox, distributed locking, persistence, and end-to-end acceptance.
+currently uses Hexagonal Architecture on `main`. This branch proves that the `domain-architecture`
+plugin and optional jfoundry support can guide an AI agent from business requirements and domain
+modeling through a Hexagonal architecture decision, domain implementation, CQRS, Outbox, Inbox,
+distributed locking, persistence, and end-to-end acceptance.
+
+### Cross-Variant Validation
+
+The separately maintained `onion-architecture` branch applies Onion Simple Architecture to the same
+application without changing its business rules, database model, integration contracts, or
+acceptance scenarios. Together, the two branches validate two alternative architecture decisions;
+they are not two architecture styles active in the current `main` codebase.
 
 This conclusion does not come from the scaffold structure. It comes from a real business path: HTTP
 commands enter an aggregate; business data and Outbox records commit in one transaction; Kafka
@@ -226,12 +254,15 @@ delivers across processes; both consumers use Inbox for idempotency; payment res
 projection; and Redis locking plus a database transaction protects the cross-aggregate monthly
 limit.
 
-### Validation Evidence
+### Cross-Variant Validation Evidence
 
 - jfoundry completed two 67-module test matrices on Java 21 and Java 25.
 - Every plugin skill, the Codex plugin manifest, and the Claude marketplace metadata passed
   validation.
-- The demo passed 133 automated tests, including all five container-based end-to-end scenarios.
+- Both architecture variants passed the same complete automated suite, including all five
+  container-based end-to-end scenarios.
+- Onion validation covers explicit Domain, Application, and Infrastructure rings, inward dependency
+  rules, DDD repository conventions, and the existing targeted CQRS structure.
 - End-to-end coverage includes payment success, payment failure, duplicate delivery, concurrent
   monthly-limit enforcement, and over-limit rollback without an Outbox record.
 - A separately started local environment also completed the entire path from HTTP approval to a
@@ -252,6 +283,9 @@ Development of the demo exposed and corrected several framework gaps:
   Kafka senders were corrected.
 - Non-web applications gained Jackson support, and default Outbox JSON no longer leaks Java type
   metadata.
+- Architecture rules now keep CQRS checks independent of Hexagonal roles, recognize
+  capability-nested direction packages, and prevent Primary and Secondary Ports from owning models
+  used across the opposite direction.
 
 These changes followed runtime-neutral contracts, runtime adapters, and business responsibility
 boundaries. They did not retain parallel implementations to preserve incorrect behavior.
@@ -273,6 +307,12 @@ The plugin guidance was extended with the following conclusions:
   contract translation responsibilities.
 - Package-level architecture annotations apply only when every type in the package has the same
   role. Mixed packages should be split or use type-level annotations.
+- Capability-first organization applies within both Hexagonal and Onion application boundaries;
+  shared application models belong to their capability rather than either Port direction, domain,
+  or infrastructure.
+- Onion names should start from DDD ubiquitous language and actual application responsibilities.
+  `Reader`, `Store`, `Finder`, and similar suffixes are optional project conventions, not Onion,
+  DDD, or jfoundry stereotypes.
 
 ### Corrections in the Demo
 
@@ -289,16 +329,22 @@ than by global `command`, `service`, `integration`, and `port` buckets; directio
 packages now live below their owning capabilities. Domain policy moved into the domain, while
 Hexagonal Primary/Secondary Port and Adapter roles remain explicit at type level.
 
+The same business implementation was then migrated to Onion rings without changing acceptance
+behavior: web and messaging moved to infrastructure, application dependencies received
+responsibility-first names, and the domain Repository remained an inner-ring DDD contract.
+
 ### Capability Boundaries
 
 The current evidence confirms that, within the validated stack and business complexity, jfoundry
 and the `domain-architecture` plugin are sufficient for an AI agent to develop a complete business
-project using DDD, either of the separately validated Hexagonal or Onion architecture styles, and
+project using DDD, either of the separately validated Hexagonal or Onion Simple architecture styles, and
 reliable messaging. The styles remain separate architecture choices rather than one combined model.
 
-This conclusion cannot be generalized directly to non-Spring runtimes, other ORMs, or other message
-brokers. Security, observability, deployment, capacity, and production operations are also outside
-this demo's validation scope. The Spring 7 composed-annotation
+The Onion validation uses package-level rings inside one Maven application module. It validates
+ArchUnit dependency rules, but not compile-time isolation between separately built ring modules.
+This conclusion also cannot be generalized directly to non-Spring runtimes, other ORMs, or other
+message brokers. Security, observability, deployment, capacity, and production operations are
+outside this demo's validation scope. The Spring 7 composed-annotation
 attribute-mapping issue is tracked by the open jMolecules
 [issue #153](https://github.com/xmolecules/jmolecules/issues/153) and should not be worked around by
 adding Spring `@AliasFor` to jfoundry's runtime-neutral modules. The BeanPostProcessor early
