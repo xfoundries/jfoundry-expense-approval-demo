@@ -8,18 +8,18 @@ import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class WithdrawExpenseClaimCommandHandler {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public WithdrawExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public WithdrawExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
     @CommandHandler
     @ApplicationTransactional
-    public void handle(WithdrawExpenseClaimCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
-        claim.withdraw(command.actor().userId(), context.now());
-        context.save(claim);
+    public void withdraw(WithdrawExpenseClaimCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
+        claim.withdraw(command.actor().userId(), support.now());
+        support.save(claim);
     }
 }

@@ -11,21 +11,21 @@ import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class RejectExpenseClaimCommandHandler {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public RejectExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public RejectExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
     @CommandHandler
     @ApplicationTransactional
-    public void handle(RejectExpenseClaimCommand command) {
-        ExpenseClaim claim = context.load(command.claimId());
+    public void reject(RejectExpenseClaimCommand command) {
+        ExpenseClaim claim = support.load(command.claimId());
         ApprovalRole requiredRole = requiredRole(claim.state());
-        context.requireRole(command.actor(), requiredRole);
+        support.requireRole(command.actor(), requiredRole);
         claim.reject(
-                command.actor().userId(), RejectionReason.of(command.reason()), context.now());
-        context.save(claim);
+                command.actor().userId(), RejectionReason.of(command.reason()), support.now());
+        support.save(claim);
     }
 
     private static ApprovalRole requiredRole(ClaimState state) {

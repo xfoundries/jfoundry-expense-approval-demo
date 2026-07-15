@@ -1,4 +1,4 @@
-package io.github.xfoundries.demo.expenseapproval.infrastructure.query.claim;
+package io.github.xfoundries.demo.expenseapproval.infrastructure.lookup.claim;
 
 import java.time.Instant;
 

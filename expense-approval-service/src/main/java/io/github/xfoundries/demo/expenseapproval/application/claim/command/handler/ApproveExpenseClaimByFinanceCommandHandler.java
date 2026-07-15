@@ -13,7 +13,7 @@ public class ApproveExpenseClaimByFinanceCommandHandler {
     }
 
     @CommandHandler
-    public void handle(ApproveExpenseClaimByFinanceCommand command) {
+    public void approveByFinance(ApproveExpenseClaimByFinanceCommand command) {
         coordinator.approveByFinance(command);
     }
 }

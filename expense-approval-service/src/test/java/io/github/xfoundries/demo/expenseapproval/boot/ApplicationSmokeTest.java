@@ -3,7 +3,6 @@ package io.github.xfoundries.demo.expenseapproval.boot;
 import javax.sql.DataSource;
 
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.CreateExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.ClaimCommandDispatcher;
 import io.github.xfoundries.demo.expenseapproval.support.PostgreSqlIntegrationTest;
 import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;
@@ -24,9 +23,6 @@ class ApplicationSmokeTest extends PostgreSqlIntegrationTest {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private ClaimCommandDispatcher commandDispatcher;
-
-    @Autowired
     private CreateExpenseClaimCommandHandler createHandler;
 
     @Test
@@ -34,7 +30,6 @@ class ApplicationSmokeTest extends PostgreSqlIntegrationTest {
         assertThat(dataSource).isNotNull();
         assertThat(applicationContext.getBeansOfType(TransactionRunner.class)).hasSize(1);
         assertThat(applicationContext.containsBean("applicationTransactionalAdvisor")).isTrue();
-        assertThat(commandDispatcher).isNotNull();
         assertThat(AopUtils.isAopProxy(createHandler)).isTrue();
     }
 }

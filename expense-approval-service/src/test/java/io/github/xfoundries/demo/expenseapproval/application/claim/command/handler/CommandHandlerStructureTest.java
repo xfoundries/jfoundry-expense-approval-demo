@@ -24,29 +24,31 @@ class CommandHandlerStructureTest {
 
     @ParameterizedTest
     @MethodSource("handlerCases")
-    void eachCommandHasOneTransactionalHandler(HandlerCase handlerCase) throws Exception {
+    void eachCommandHasOneTransactionalBusinessActionHandler(HandlerCase handlerCase) throws Exception {
         assertThat(handlerCase.commandType()).hasAnnotation(Command.class);
-        Method handle = handlerCase.handlerType().getDeclaredMethod("handle", handlerCase.commandType());
-        assertThat(handle.isAnnotationPresent(CommandHandler.class)).isTrue();
-        assertThat(handle.isAnnotationPresent(ApplicationTransactional.class))
+        Method action = handlerCase.handlerType().getDeclaredMethod(
+                handlerCase.actionMethod(), handlerCase.commandType());
+        assertThat(action.isAnnotationPresent(CommandHandler.class)).isTrue();
+        assertThat(action.isAnnotationPresent(ApplicationTransactional.class))
                 .isEqualTo(handlerCase.transactional());
     }
 
     private static Stream<HandlerCase> handlerCases() {
         return Stream.of(
-                new HandlerCase(AddExpenseItemCommand.class, AddExpenseItemCommandHandler.class, true),
-                new HandlerCase(UpdateExpenseItemCommand.class, UpdateExpenseItemCommandHandler.class, true),
-                new HandlerCase(RemoveExpenseItemCommand.class, RemoveExpenseItemCommandHandler.class, true),
-                new HandlerCase(SubmitExpenseClaimCommand.class, SubmitExpenseClaimCommandHandler.class, true),
+                new HandlerCase(AddExpenseItemCommand.class, AddExpenseItemCommandHandler.class, "addItem", true),
+                new HandlerCase(UpdateExpenseItemCommand.class, UpdateExpenseItemCommandHandler.class, "updateItem", true),
+                new HandlerCase(RemoveExpenseItemCommand.class, RemoveExpenseItemCommandHandler.class, "removeItem", true),
+                new HandlerCase(SubmitExpenseClaimCommand.class, SubmitExpenseClaimCommandHandler.class, "submit", true),
                 new HandlerCase(ApproveExpenseClaimByManagerCommand.class,
-                        ApproveExpenseClaimByManagerCommandHandler.class, false),
+                        ApproveExpenseClaimByManagerCommandHandler.class, "approveByManager", false),
                 new HandlerCase(ApproveExpenseClaimByFinanceCommand.class,
-                        ApproveExpenseClaimByFinanceCommandHandler.class, false),
-                new HandlerCase(RejectExpenseClaimCommand.class, RejectExpenseClaimCommandHandler.class, true),
-                new HandlerCase(ReopenExpenseClaimCommand.class, ReopenExpenseClaimCommandHandler.class, true),
-                new HandlerCase(WithdrawExpenseClaimCommand.class, WithdrawExpenseClaimCommandHandler.class, true));
+                        ApproveExpenseClaimByFinanceCommandHandler.class, "approveByFinance", false),
+                new HandlerCase(RejectExpenseClaimCommand.class, RejectExpenseClaimCommandHandler.class, "reject", true),
+                new HandlerCase(ReopenExpenseClaimCommand.class, ReopenExpenseClaimCommandHandler.class, "reopen", true),
+                new HandlerCase(WithdrawExpenseClaimCommand.class, WithdrawExpenseClaimCommandHandler.class, "withdraw", true));
     }
 
-    private record HandlerCase(Class<?> commandType, Class<?> handlerType, boolean transactional) {
+    private record HandlerCase(
+            Class<?> commandType, Class<?> handlerType, String actionMethod, boolean transactional) {
     }
 }

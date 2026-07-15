@@ -8,18 +8,18 @@ import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class SubmitExpenseClaimCommandHandler {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public SubmitExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public SubmitExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
     @CommandHandler
     @ApplicationTransactional
-    public void handle(SubmitExpenseClaimCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
-        claim.submit(command.actor().userId(), context.now());
-        context.save(claim);
+    public void submit(SubmitExpenseClaimCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
+        claim.submit(command.actor().userId(), support.now());
+        support.save(claim);
     }
 }

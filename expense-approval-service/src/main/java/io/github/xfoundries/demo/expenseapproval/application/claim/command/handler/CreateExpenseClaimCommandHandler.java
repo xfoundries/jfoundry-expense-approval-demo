@@ -23,7 +23,7 @@ public class CreateExpenseClaimCommandHandler {
 
     @CommandHandler
     @ApplicationTransactional
-    public ExpenseClaimId handle(CreateExpenseClaimCommand command) {
+    public ExpenseClaimId create(CreateExpenseClaimCommand command) {
         if (command.actor().role() != ApprovalRole.EMPLOYEE) {
             throw new InvalidArgumentException("This action requires role EMPLOYEE");
         }

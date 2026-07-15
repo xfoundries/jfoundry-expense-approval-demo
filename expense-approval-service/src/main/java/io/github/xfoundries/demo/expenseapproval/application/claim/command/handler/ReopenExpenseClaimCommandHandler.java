@@ -8,18 +8,18 @@ import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class ReopenExpenseClaimCommandHandler {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public ReopenExpenseClaimCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public ReopenExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
     @CommandHandler
     @ApplicationTransactional
-    public void handle(ReopenExpenseClaimCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
-        claim.reopen(command.actor().userId(), context.now());
-        context.save(claim);
+    public void reopen(ReopenExpenseClaimCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
+        claim.reopen(command.actor().userId(), support.now());
+        support.save(claim);
     }
 }

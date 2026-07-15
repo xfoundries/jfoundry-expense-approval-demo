@@ -4,13 +4,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.ZoneId;
 
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.DefaultClaimCommandDispatcher;
 import io.github.xfoundries.demo.expenseapproval.application.approval.FinalApprovalCoordinator;
 import io.github.xfoundries.demo.expenseapproval.domain.policy.MonthlyExpenseLimitPolicy;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.AddExpenseItemCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ApproveExpenseClaimByFinanceCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ApproveExpenseClaimByManagerCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ClaimCommandContext;
+import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.ExpenseClaimCommandSupport;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.CreateExpenseClaimCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.RejectExpenseClaimCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.RemoveExpenseItemCommandHandler;
@@ -18,7 +17,6 @@ import io.github.xfoundries.demo.expenseapproval.application.claim.command.handl
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.SubmitExpenseClaimCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.UpdateExpenseItemCommandHandler;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.handler.WithdrawExpenseClaimCommandHandler;
-import io.github.xfoundries.demo.expenseapproval.application.claim.command.ClaimCommandDispatcher;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.ExpenseClaimQueries;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.ExpenseClaimViewReader;
 import io.github.xfoundries.demo.expenseapproval.application.approval.ApprovedExpenseAmountReader;
@@ -44,9 +42,9 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    ClaimCommandContext claimCommandContext(
+    ExpenseClaimCommandSupport expenseClaimCommandSupport(
             ExpenseClaimRepository repository, Clock applicationClock) {
-        return new ClaimCommandContext(repository, applicationClock);
+        return new ExpenseClaimCommandSupport(repository, applicationClock);
     }
 
     @Bean
@@ -56,23 +54,23 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    AddExpenseItemCommandHandler addExpenseItemCommandHandler(ClaimCommandContext context) {
-        return new AddExpenseItemCommandHandler(context);
+    AddExpenseItemCommandHandler addExpenseItemCommandHandler(ExpenseClaimCommandSupport support) {
+        return new AddExpenseItemCommandHandler(support);
     }
 
     @Bean
-    UpdateExpenseItemCommandHandler updateExpenseItemCommandHandler(ClaimCommandContext context) {
-        return new UpdateExpenseItemCommandHandler(context);
+    UpdateExpenseItemCommandHandler updateExpenseItemCommandHandler(ExpenseClaimCommandSupport support) {
+        return new UpdateExpenseItemCommandHandler(support);
     }
 
     @Bean
-    RemoveExpenseItemCommandHandler removeExpenseItemCommandHandler(ClaimCommandContext context) {
-        return new RemoveExpenseItemCommandHandler(context);
+    RemoveExpenseItemCommandHandler removeExpenseItemCommandHandler(ExpenseClaimCommandSupport support) {
+        return new RemoveExpenseItemCommandHandler(support);
     }
 
     @Bean
-    SubmitExpenseClaimCommandHandler submitExpenseClaimCommandHandler(ClaimCommandContext context) {
-        return new SubmitExpenseClaimCommandHandler(context);
+    SubmitExpenseClaimCommandHandler submitExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        return new SubmitExpenseClaimCommandHandler(support);
     }
 
     @Bean
@@ -109,36 +107,18 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    RejectExpenseClaimCommandHandler rejectExpenseClaimCommandHandler(ClaimCommandContext context) {
-        return new RejectExpenseClaimCommandHandler(context);
+    RejectExpenseClaimCommandHandler rejectExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        return new RejectExpenseClaimCommandHandler(support);
     }
 
     @Bean
-    ReopenExpenseClaimCommandHandler reopenExpenseClaimCommandHandler(ClaimCommandContext context) {
-        return new ReopenExpenseClaimCommandHandler(context);
+    ReopenExpenseClaimCommandHandler reopenExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        return new ReopenExpenseClaimCommandHandler(support);
     }
 
     @Bean
-    WithdrawExpenseClaimCommandHandler withdrawExpenseClaimCommandHandler(ClaimCommandContext context) {
-        return new WithdrawExpenseClaimCommandHandler(context);
-    }
-
-    @Bean
-    ClaimCommandDispatcher claimCommandDispatcher(
-            CreateExpenseClaimCommandHandler createHandler,
-            AddExpenseItemCommandHandler addItemHandler,
-            UpdateExpenseItemCommandHandler updateItemHandler,
-            RemoveExpenseItemCommandHandler removeItemHandler,
-            SubmitExpenseClaimCommandHandler submitHandler,
-            ApproveExpenseClaimByManagerCommandHandler managerApprovalHandler,
-            ApproveExpenseClaimByFinanceCommandHandler financeApprovalHandler,
-            RejectExpenseClaimCommandHandler rejectHandler,
-            ReopenExpenseClaimCommandHandler reopenHandler,
-            WithdrawExpenseClaimCommandHandler withdrawHandler) {
-        return new DefaultClaimCommandDispatcher(
-                createHandler, addItemHandler, updateItemHandler, removeItemHandler,
-                submitHandler, managerApprovalHandler, financeApprovalHandler,
-                rejectHandler, reopenHandler, withdrawHandler);
+    WithdrawExpenseClaimCommandHandler withdrawExpenseClaimCommandHandler(ExpenseClaimCommandSupport support) {
+        return new WithdrawExpenseClaimCommandHandler(support);
     }
 
     @Bean

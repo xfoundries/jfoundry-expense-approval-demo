@@ -10,17 +10,17 @@ import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class UpdateExpenseItemCommandHandler {
 
-    private final ClaimCommandContext context;
+    private final ExpenseClaimCommandSupport support;
 
-    public UpdateExpenseItemCommandHandler(ClaimCommandContext context) {
-        this.context = context;
+    public UpdateExpenseItemCommandHandler(ExpenseClaimCommandSupport support) {
+        this.support = support;
     }
 
     @CommandHandler
     @ApplicationTransactional
-    public void handle(UpdateExpenseItemCommand command) {
-        context.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = context.load(command.claimId());
+    public void updateItem(UpdateExpenseItemCommand command) {
+        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+        ExpenseClaim claim = support.load(command.claimId());
         ExpenseItem item = new ExpenseItem(
                 command.itemId(),
                 command.expenseDate(),
@@ -28,7 +28,7 @@ public class UpdateExpenseItemCommandHandler {
                 Money.positiveCny(command.amount()),
                 command.description(),
                 command.receiptReference());
-        claim.updateItem(command.actor().userId(), item, context.now());
-        context.save(claim);
+        claim.updateItem(command.actor().userId(), item, support.now());
+        support.save(claim);
     }
 }
