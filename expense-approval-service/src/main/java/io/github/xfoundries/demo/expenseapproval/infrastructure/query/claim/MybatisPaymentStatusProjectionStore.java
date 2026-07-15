@@ -1,26 +1,23 @@
 package io.github.xfoundries.demo.expenseapproval.infrastructure.query.claim;
 
 import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentStatusProjectionStore;
-import org.jfoundry.infrastructure.persistence.PersistenceFailureTranslator;
-import org.jfoundry.infrastructure.persistence.PersistenceOperation;
+import org.jfoundry.infrastructure.persistence.AbstractPersistenceAdapter;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class MybatisPaymentStatusProjectionStore implements PaymentStatusProjectionStore {
+public class MybatisPaymentStatusProjectionStore
+        extends AbstractPersistenceAdapter
+        implements PaymentStatusProjectionStore {
 
     private final PaymentStatusMapper mapper;
-    private final PersistenceFailureTranslator failureTranslator;
 
-    public MybatisPaymentStatusProjectionStore(
-            PaymentStatusMapper mapper,
-            PersistenceFailureTranslator failureTranslator) {
+    public MybatisPaymentStatusProjectionStore(PaymentStatusMapper mapper) {
         this.mapper = mapper;
-        this.failureTranslator = failureTranslator;
     }
 
     @Override
     public void upsert(PaymentStatusProjection projection) {
-        try {
+        modify(() -> {
             PaymentStatusData data = new PaymentStatusData();
             data.setClaimId(projection.claimId());
             data.setStatus(projection.status());
@@ -33,8 +30,6 @@ public class MybatisPaymentStatusProjectionStore implements PaymentStatusProject
             if (!mapper.insertOrUpdate(data)) {
                 throw new IllegalStateException("Payment status projection was not persisted");
             }
-        } catch (RuntimeException failure) {
-            throw failureTranslator.translate(PersistenceOperation.MODIFY, failure);
-        }
+        });
     }
 }

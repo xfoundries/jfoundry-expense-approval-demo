@@ -70,6 +70,10 @@ expenseapproval
 这些后缀只是本项目约定，不是 DDD 或 Onion 官方模式，也不是 jfoundry 的强制要求；
 `MybatisExpenseClaimViewReader` 这类技术名称只出现在基础设施实现中。
 
+这些持久化 Reader 与 Store 继承 jfoundry 的 `AbstractPersistenceAdapter`：契约方法显式使用
+`query` 或 `modify`，Spring 运行时集成负责技术异常翻译，不再通过构造器注入 translator 或在业务
+Adapter 中手写 try/catch。
+
 各机制承担不同职责：
 
 - `ExpenseClaim` 保护单张报销单的状态转换和审批规则。

@@ -26,30 +26,28 @@ import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.clai
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseClaimMapper;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemData;
 import io.github.xfoundries.demo.expenseapproval.infrastructure.persistence.claim.ExpenseItemMapper;
-import org.jfoundry.infrastructure.persistence.PersistenceFailureTranslator;
-import org.jfoundry.infrastructure.persistence.PersistenceOperation;
+import org.jfoundry.infrastructure.persistence.AbstractPersistenceAdapter;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class MybatisExpenseClaimViewReader implements ExpenseClaimViewReader {
+public class MybatisExpenseClaimViewReader
+        extends AbstractPersistenceAdapter
+        implements ExpenseClaimViewReader {
 
     private final ExpenseClaimMapper claimMapper;
     private final ExpenseItemMapper itemMapper;
     private final ClaimActionMapper actionMapper;
     private final PaymentStatusMapper paymentStatusMapper;
-    private final PersistenceFailureTranslator failureTranslator;
 
     public MybatisExpenseClaimViewReader(
             ExpenseClaimMapper claimMapper,
             ExpenseItemMapper itemMapper,
             ClaimActionMapper actionMapper,
-            PaymentStatusMapper paymentStatusMapper,
-            PersistenceFailureTranslator failureTranslator) {
+            PaymentStatusMapper paymentStatusMapper) {
         this.claimMapper = claimMapper;
         this.itemMapper = itemMapper;
         this.actionMapper = actionMapper;
         this.paymentStatusMapper = paymentStatusMapper;
-        this.failureTranslator = failureTranslator;
     }
 
     @Override
@@ -77,7 +75,7 @@ public class MybatisExpenseClaimViewReader implements ExpenseClaimViewReader {
 
     @Override
     public Optional<ClaimDetail> findDetail(ExpenseClaimId id) {
-        try {
+        return query(() -> {
             ExpenseClaimData root = claimMapper.selectById(id.value());
             if (root == null) {
                 return Optional.empty();
@@ -101,14 +99,12 @@ public class MybatisExpenseClaimViewReader implements ExpenseClaimViewReader {
                     items,
                     actions,
                     toPayment(ClaimState.valueOf(root.getState()), paymentStatusMapper.selectById(root.getId()))));
-        } catch (RuntimeException failure) {
-            throw failureTranslator.translate(PersistenceOperation.QUERY, failure);
-        }
+        });
     }
 
     private PageResult<ClaimSummary> findPage(
             LambdaQueryWrapper<ExpenseClaimData> query, PageQuery pageQuery) {
-        try {
+        return query(() -> {
             Page<ExpenseClaimData> page = claimMapper.selectPage(
                     Page.of(pageQuery.page() + 1L, pageQuery.size()), query);
             Map<String, PaymentStatusData> payments = findPayments(page.getRecords());
@@ -119,9 +115,7 @@ public class MybatisExpenseClaimViewReader implements ExpenseClaimViewReader {
                     page.getTotal(),
                     pageQuery.page(),
                     pageQuery.size());
-        } catch (RuntimeException failure) {
-            throw failureTranslator.translate(PersistenceOperation.QUERY, failure);
-        }
+        });
     }
 
     private Map<String, PaymentStatusData> findPayments(List<ExpenseClaimData> claims) {

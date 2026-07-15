@@ -78,6 +78,10 @@ packages. Onion Architecture does not define Port or Adapter roles. This demo us
 project convention, not official DDD or Onion patterns and not a jfoundry requirement. Names such as
 `MybatisExpenseClaimViewReader` add technology only in infrastructure implementations.
 
+Those persistence Readers and Stores extend jfoundry's `AbstractPersistenceAdapter`: their contract
+methods explicitly use `query` or `modify`, while Spring runtime integration supplies technical
+failure translation without a translator constructor dependency or local try/catch block.
+
 Each mechanism has a distinct responsibility:
 
 - `ExpenseClaim` protects state transitions and approval rules for one expense claim.
