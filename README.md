@@ -69,18 +69,24 @@ expenseapproval
 │   ├── approval              final approval; port/out contains the approved-amount Port
 │   ├── payment               payment projection; port/out contains its persistence Port
 │   └── identity              approval actor and role
-├── web                       HTTP Primary Adapter
-├── messaging                 Kafka Primary Adapter
-└── infrastructure            persistence, query, lock, and messaging Secondary Adapters
+└── adapter
+    ├── in                    HTTP and Kafka Primary Adapters
+    │   ├── web
+    │   └── messaging
+    └── out                   persistence and query Secondary Adapters
+        ├── persistence
+        └── query
 ```
 
 The application core is capability-first, with `port.in` and `port.out` nested only where directional
 contracts are needed. `UseCase`, `Port`, and `Adapter` are used here because this branch explicitly
-selects Hexagonal Architecture; they are not universal DDD naming rules.
+selects Hexagonal Architecture; they are not universal DDD naming rules. This branch selects the
+`adapter.in/out` package convention; `adapter.primary/secondary` is an equivalent alternative, but
+the two vocabularies must not be mixed in one project.
 
 `ClaimViews` belongs to the neutral `application.claim.query.view` package because both inbound and
 outbound query contracts use it. It is owned by the application capability, not by either Port
-direction, the domain model, or an infrastructure implementation.
+direction, the domain model, or an outbound adapter implementation.
 
 Each mechanism has a distinct responsibility:
 

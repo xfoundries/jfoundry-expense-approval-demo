@@ -4,7 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@MapperScan("io.github.xfoundries.demo.expenseapproval.infrastructure")
+@MapperScan("io.github.xfoundries.demo.expenseapproval.adapter.out")
 @SpringBootApplication(scanBasePackages = "io.github.xfoundries.demo.expenseapproval")
 public class ExpenseApprovalApplication {
 
@@ -12,4 +12,3 @@ public class ExpenseApprovalApplication {
         SpringApplication.run(ExpenseApprovalApplication.class, args);
     }
 }
-

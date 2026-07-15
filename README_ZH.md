@@ -60,17 +60,22 @@ expenseapproval
 │   ├── approval              最终审批；port/out 放置已审批金额 Port
 │   ├── payment               支付投影；port/out 放置其持久化 Port
 │   └── identity              审批参与者与角色
-├── web                       HTTP Primary Adapter
-├── messaging                 Kafka Primary Adapter
-└── infrastructure            持久化、查询、锁与消息 Secondary Adapter
+└── adapter
+    ├── in                    HTTP 与 Kafka Primary Adapter
+    │   ├── web
+    │   └── messaging
+    └── out                   持久化与查询 Secondary Adapter
+        ├── persistence
+        └── query
 ```
 
 应用核心以业务能力优先，只在需要方向契约时向下设置 `port.in` 和 `port.out`。本分支使用
 `UseCase`、`Port`、`Adapter`，是因为它明确选择了 Hexagonal Architecture；这些名称不是通用
-DDD 规则。
+DDD 规则。本分支选择 `adapter.in/out` 包约定；`adapter.primary/secondary` 是等价替代，但同一
+项目不能混用两套词汇。
 
 `ClaimViews` 位于中立的 `application.claim.query.view`，因为入站与出站查询契约都会使用它。
-它归 application 的报销查询能力所有，不归任一 Port 方向，也不属于领域模型或基础设施实现。
+它归 application 的报销查询能力所有，不归任一 Port 方向，也不属于领域模型或出站 Adapter 实现。
 
 各机制承担不同职责：
 
