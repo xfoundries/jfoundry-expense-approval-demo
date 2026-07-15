@@ -1,4 +1,4 @@
-package io.github.xfoundries.demo.expenseapproval.adapter.out.query.claim;
+package io.github.xfoundries.demo.expenseapproval.adapter.out.projection.payment;
 
 import io.github.xfoundries.demo.expenseapproval.application.payment.port.out.PaymentStatusProjectionPort;
 import org.jfoundry.architecture.hexagonal.SecondaryAdapter;

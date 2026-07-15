@@ -17,6 +17,8 @@ import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.Cl
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PaymentDisplayStatus;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.view.ClaimViews.PaymentView;
 import io.github.xfoundries.demo.expenseapproval.application.claim.query.port.out.ExpenseClaimViewPort;
+import io.github.xfoundries.demo.expenseapproval.adapter.out.projection.payment.PaymentStatusData;
+import io.github.xfoundries.demo.expenseapproval.adapter.out.projection.payment.PaymentStatusMapper;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
 import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
