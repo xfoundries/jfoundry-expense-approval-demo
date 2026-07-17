@@ -24,8 +24,8 @@ independently.
 
 | Branch | Architecture style | Status in this README |
 |--------|--------------------|-----------------------|
-| `main` | Hexagonal Architecture | Current implementation on the repository's default branch; package structure and runtime descriptions below refer to this branch. |
-| [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture) | Onion Simple Architecture | Separately maintained validation variant with its own README and architecture vocabulary. |
+| `hexagonal/mybatis-plus` | Hexagonal Architecture | Current implementation on the repository's default branch; package structure and runtime descriptions below refer to this branch. |
+| [`onion/mybatis-plus`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture) | Onion Simple Architecture | Separately maintained validation variant with its own README and architecture vocabulary. |
 
 Unless a section explicitly says "cross-variant" or names the Onion branch, `application`, Port,
 Adapter, package, and dependency descriptions in this README refer to the current Hexagonal
