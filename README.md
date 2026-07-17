@@ -2,7 +2,7 @@
 
 English | [中文](README_ZH.md)
 
-> **Current branch:** this README and the checked-out `main` branch describe the Hexagonal
+> **Current branch:** this README and the checked-out `hexagonal/jpa` branch describe the Hexagonal
 > Architecture implementation. The Onion Simple implementation is maintained separately on
 > [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture).
 
@@ -10,10 +10,10 @@ This is a business-light demo with a complete architecture path. It validates wh
 can use the [domain-architecture-skills](https://github.com/xfoundries/domain-architecture-skills) plugin and optional [jfoundry](https://github.com/xfoundries/jfoundry) support to move from complete
 requirements through domain modeling, architecture decisions, implementation, and automated
 acceptance. The project deliberately avoids expanding organization structures, approval matrices,
-and other complex business concerns. On the current `main` branch, its focus is to verify that DDD,
+and other complex business concerns. On the current `hexagonal/jpa` branch, its focus is to verify that DDD,
 Hexagonal Architecture, CQRS, Outbox, Inbox, Kafka, distributed locking, and persistence can be
 combined correctly. The separate Onion branch reuses the same business and acceptance baseline to
-validate Onion Simple without changing the architecture of `main`.
+validate Onion Simple without changing the architecture of `hexagonal/jpa`.
 
 This project explicitly selects a local jfoundry build to validate the plugin's `using-jfoundry`
 landing phase. **jfoundry is not required by the `domain-architecture` plugin.** Projects that do
@@ -24,19 +24,19 @@ independently.
 
 | Branch | Architecture style | Status in this README |
 |--------|--------------------|-----------------------|
-| `main` | Hexagonal Architecture | Current implementation on the repository's default branch; package structure and runtime descriptions below refer to this branch. |
+| `hexagonal/jpa` | Hexagonal Architecture | Current implementation on the repository's default branch; package structure and runtime descriptions below refer to this branch. |
 | [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture) | Onion Simple Architecture | Separately maintained validation variant with its own README and architecture vocabulary. |
 
 Unless a section explicitly says "cross-variant" or names the Onion branch, `application`, Port,
 Adapter, package, and dependency descriptions in this README refer to the current Hexagonal
-`main` branch.
+`hexagonal/jpa` branch.
 
 ## Project Structure
 
 ```text
 jfoundry-expense-approval-demo/
 ├── integration-contracts/          # Versioned cross-process contracts; no shared domain model
-├── expense-approval-service/       # DDD expense service; Hexagonal on main, Onion Simple on its variant branch
+├── expense-approval-service/       # DDD expense service; Hexagonal on hexagonal/jpa, Onion Simple on its variant branch
 ├── payment-processor-simulator/    # External payment simulator with deliberately simple business logic
 └── end-to-end-tests/               # Complete path through both applications and real middleware
 ```
@@ -254,7 +254,7 @@ distributed locking, persistence, and end-to-end acceptance.
 The separately maintained `onion-architecture` branch applies Onion Simple Architecture to the same
 application without changing its business rules, database model, integration contracts, or
 acceptance scenarios. Together, the two branches validate two alternative architecture decisions;
-they are not two architecture styles active in the current `main` codebase.
+they are not two architecture styles active in the current `hexagonal/jpa` codebase.
 
 This conclusion does not come from the scaffold structure. It comes from a real business path: HTTP
 commands enter an aggregate; business data and Outbox records commit in one transaction; Kafka
