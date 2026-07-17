@@ -4,7 +4,7 @@ English | [中文](README_ZH.md)
 
 > **Current branch:** this README and the checked-out `main` branch describe the Hexagonal
 > Architecture implementation. The Onion Simple implementation is maintained separately on
-> [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion/mybatis-plus).
+> [`onion/mybatis-plus`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion/mybatis-plus).
 
 This is a business-light demo with a complete architecture path. It validates whether an AI agent
 can use the [domain-architecture-skills](https://github.com/xfoundries/domain-architecture-skills) plugin and optional [jfoundry](https://github.com/xfoundries/jfoundry) support to move from complete
