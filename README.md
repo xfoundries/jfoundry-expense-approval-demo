@@ -4,15 +4,15 @@ English | [中文](README_ZH.md)
 
 > **Current branch:** this README and the checked-out `onion-architecture` branch describe the
 > Onion Simple Architecture implementation. The Hexagonal implementation is maintained separately
-> on [`main`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/main).
+> on [`hexagonal/mybatis-plus`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/hexagonal/mybatis-plus).
 
 This is a business-light demo with a complete architecture path. It validates whether an AI agent
 can use the `domain-architecture` plugin and optional jfoundry support to move from complete
 requirements through domain modeling, architecture decisions, implementation, and automated
 acceptance. The project deliberately avoids expanding organization structures, approval matrices,
-and other complex business concerns. On the current `onion-architecture` branch, its focus is to
+and other complex business concerns. On the current `onion/mybatis-plus` branch, its focus is to
 verify that DDD, Onion Simple Architecture, CQRS, Outbox, Inbox, Kafka, distributed locking, and
-persistence can be combined correctly. The separate `main` branch reuses the same business and
+persistence can be combined correctly. The separate `hexagonal/mybatis-plus` branch reuses the same business and
 acceptance baseline to validate Hexagonal Architecture without changing this branch's architecture.
 
 This project explicitly selects a local jfoundry build to validate the plugin's `using-jfoundry`
@@ -24,8 +24,8 @@ independently.
 
 | Branch | Architecture style | Status in this README |
 |--------|--------------------|-----------------------|
-| `onion-architecture` | Onion Simple Architecture | Current implementation; package structure and dependency descriptions below refer to this branch. |
-| [`main`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/main) | Hexagonal Architecture | Separately maintained default-branch variant with its own README and architecture vocabulary. |
+| `onion/mybatis-plus` | Onion Simple Architecture | Current implementation; package structure and dependency descriptions below refer to this branch. |
+| [`hexagonal/mybatis-plus`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/main) | Hexagonal Architecture | Separately maintained default-branch variant with its own README and architecture vocabulary. |
 
 Unless a section explicitly says "cross-variant" or names `main`, ring, package, naming, and
 dependency descriptions in this README refer to the current Onion Simple branch.
