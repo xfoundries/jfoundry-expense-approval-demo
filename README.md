@@ -45,15 +45,16 @@ The root project is a Maven aggregator. Regular builds include the first three m
 `end-to-end-tests` is enabled only by the `e2e` profile so that ordinary module builds do not
 unconditionally start the complete container topology.
 
-## Architecture and Technology (`main`: Hexagonal)
+## Architecture and Technology (`hexagonal/jpa`: Hexagonal)
 
 - Java 21, Maven, Spring Boot 3.5.16, jfoundry 1.0.0-SNAPSHOT
-- MyBatis-Plus, PostgreSQL 17, Flyway
+- Expense approval service: Jakarta Persistence, PostgreSQL 17, Flyway
+- Payment processor simulator: MyBatis-Plus, PostgreSQL 17, Flyway
 - Kafka, Redis/Redisson, Testcontainers
 - JUnit 5, ArchUnit, Awaitility
 - The command side uses the `ExpenseClaim` aggregate and explicit Command/Handler/Dispatcher types
-- The query side uses view-oriented MyBatis queries and a payment-status projection without
-  restoring aggregates
+- The query side uses JPA read adapters and a payment-status projection without restoring
+  aggregates
 - CQRS does not use Event Sourcing; command tables and query projections remain in the same expense
   database
 
@@ -91,7 +92,7 @@ direction, the domain model, or an outbound adapter implementation.
 Each mechanism has a distinct responsibility:
 
 - `ExpenseClaim` protects state transitions and approval rules for one expense claim.
-- MyBatis-Plus optimistic locking protects concurrent modification of one aggregate.
+- JPA `@Version` optimistic locking protects concurrent modification of one aggregate.
 - A Redis lock serializes the cross-aggregate monthly limit check by employee and month.
 - Transactional Outbox commits business changes and pending messages in the same database
   transaction.
@@ -241,8 +242,9 @@ or `FAILED`.
 
 ### Current Branch Assessment
 
-Within the selected Java 21, Spring Boot, MyBatis-Plus, PostgreSQL, Kafka, and Redis stack, this demo
-currently uses Hexagonal Architecture on `main`. This branch proves that the `domain-architecture`
+Within the selected Java 21, Spring Boot, Jakarta Persistence, PostgreSQL, Kafka, and Redis stack,
+the expense approval service uses Hexagonal Architecture on `hexagonal/jpa`. The payment processor
+simulator remains a deliberately simple MyBatis-Plus application. This branch proves that the `domain-architecture`
 plugin and optional jfoundry support can guide an AI agent from business requirements and domain
 modeling through a Hexagonal architecture decision, domain implementation, CQRS, Outbox, Inbox,
 distributed locking, persistence, and end-to-end acceptance.
@@ -273,52 +275,6 @@ limit.
   monthly-limit enforcement, and over-limit rollback without an Outbox record.
 - A separately started local environment also completed the entire path from HTTP approval to a
   `PAID` payment projection through real middleware.
-
-### Feedback to jfoundry
-
-Development of the demo exposed and corrected several framework gaps:
-
-- Unified aggregate persistence tracking and optimistic-lock context let single-table and
-  multi-table aggregates share the same lifecycle entry points while keeping dependent-table
-  synchronization an explicit responsibility of the business adapter.
-- Repository lifecycle entry points became proxyable by Spring CGLIB, and the framework now
-  translates known persistence-access failures consistently.
-- An explicit `OutboxTemplate` supports translating internal domain events into independent,
-  versioned integration events at the application boundary.
-- PostgreSQL Inbox idempotency and the auto-configuration order for distributed locks, Outbox, and
-  Kafka senders were corrected.
-- Non-web applications gained Jackson support, and default Outbox JSON no longer leaks Java type
-  metadata.
-- Architecture rules now keep CQRS checks independent of Hexagonal roles, recognize
-  capability-nested direction packages, and prevent Primary and Secondary Ports from owning models
-  used across the opposite direction.
-
-These changes followed runtime-neutral contracts, runtime adapters, and business responsibility
-boundaries. They did not retain parallel implementations to preserve incorrect behavior.
-
-### Feedback to the Domain Architecture Plugin
-
-The plugin guidance was extended with the following conclusions:
-
-- New projects must decide their project shape, such as single-module or multi-module, instead of
-  letting a scaffold decide implicitly.
-- Hexagonal, Onion, and other architecture styles must come from a prior architecture decision;
-  Hexagonal Architecture is not a default.
-- jfoundry remains an optional framework landing and does not block runtime-neutral domain modeling
-  or architecture guidance.
-- An aggregate Repository is first a DDD contract. Expressing it as a Secondary Port in Hexagonal
-  Architecture is reasonable but does not replace its domain identity with a mandatory category.
-- Guidance now covers multi-table aggregate persistence, exception boundaries, Spring proxies,
-  portable integration-event JSON, broker sender validation, Outbox/Inbox adoption conditions, and
-  contract translation responsibilities.
-- Package-level architecture annotations apply only when every type in the package has the same
-  role. Mixed packages should be split or use type-level annotations.
-- Capability-first organization applies within both Hexagonal and Onion application boundaries;
-  shared application models belong to their capability rather than either Port direction, domain,
-  or infrastructure.
-- Onion names should start from DDD ubiquitous language and actual application responsibilities.
-  `Reader`, `Store`, `Finder`, and similar suffixes are optional project conventions, not Onion,
-  DDD, or jfoundry stereotypes.
 
 ### Corrections in the Demo
 

@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = ExpenseApprovalApplication.class)
 @Transactional
-class MybatisExpenseClaimViewAdapterTest extends PostgreSqlIntegrationTest {
+class JpaExpenseClaimViewAdapterTest extends PostgreSqlIntegrationTest {
 
     private static final Instant NOW = Instant.parse("2026-07-12T08:00:00Z");
     private static final UserId EMPLOYEE_1 = UserId.of("employee-1");

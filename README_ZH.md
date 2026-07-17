@@ -39,14 +39,15 @@ jfoundry-expense-approval-demo/
 根项目是 Maven 聚合工程。普通构建包含前三个模块；`end-to-end-tests` 只在 `e2e` profile
 中启用，避免日常模块构建无条件启动完整容器拓扑。
 
-## 架构与技术（`main`：Hexagonal）
+## 架构与技术（`hexagonal/jpa`：Hexagonal）
 
 - Java 21、Maven、Spring Boot 3.5.16、jfoundry 1.0.0-SNAPSHOT
-- MyBatis-Plus、PostgreSQL 17、Flyway
+- 费用审批服务：Jakarta Persistence、PostgreSQL 17、Flyway
+- 支付处理模拟器：MyBatis-Plus、PostgreSQL 17、Flyway
 - Kafka、Redis/Redisson、Testcontainers
 - JUnit 5、ArchUnit、Awaitility
 - 命令侧使用 `ExpenseClaim` 聚合和显式 Command/Handler/Dispatcher
-- 查询侧使用面向视图的 MyBatis 查询与支付状态投影，不还原聚合
+- 查询侧使用 JPA 读适配器与支付状态投影，不还原聚合
 - CQRS 不使用 Event Sourcing，命令表和查询投影仍位于同一个费用数据库
 
 费用服务在明确表达 Hexagonal 角色的同时，按业务能力组织应用核心：
@@ -80,7 +81,7 @@ DDD 规则。本分支选择 `adapter.in/out` 包约定；`adapter.primary/secon
 各机制承担不同职责：
 
 - `ExpenseClaim` 保护单张报销单的状态转换和审批规则。
-- MyBatis-Plus 乐观锁保护单个聚合的并发修改。
+- JPA `@Version` 乐观锁保护单个聚合的并发修改。
 - Redis 锁串行化“员工 + 月份”维度的跨聚合额度判断。
 - Transactional Outbox 保证业务修改与待发布消息在同一数据库事务提交。
 - Inbox 以 `eventId + consumerName` 处理 Kafka 至少一次投递产生的重复消息。
@@ -220,8 +221,9 @@ curl --fail-with-body -i -X POST http://localhost:8080/api/claims \
 
 ### 当前分支判断
 
-在 Java 21、Spring Boot、MyBatis-Plus、PostgreSQL、Kafka 和 Redis 这一已选技术栈内，本 Demo
-当前在 `main` 使用 Hexagonal Architecture。本分支证明 `domain-architecture` 插件与可选的
+在 Java 21、Spring Boot、Jakarta Persistence、PostgreSQL、Kafka 和 Redis 这一已选技术栈内，费用
+审批服务当前在 `hexagonal/jpa` 使用 Hexagonal Architecture。支付处理模拟器仍是有意保持简单的
+MyBatis-Plus 应用。本分支证明 `domain-architecture` 插件与可选的
 jfoundry 可以支撑 AI Agent 从业务需求、领域建模和 Hexagonal 架构决策，一直完成领域实现、
 CQRS、Outbox、Inbox、分布式锁、持久化和端到端验收。
 
@@ -244,38 +246,6 @@ CQRS、Outbox、Inbox、分布式锁、持久化和端到端验收。
   约定和已有的按需 CQRS 结构。
 - E2E 覆盖支付成功、支付失败、重复投递、并发月度额度，以及超额回滚且不写 Outbox。
 - 独立启动两个应用和真实中间件后，HTTP 审批到支付状态 `PAID` 的完整链路再次通过。
-
-### 对 jfoundry 的反哺
-
-Demo 开发过程中发现并修正了多项框架能力缺口：
-
-- 统一聚合持久化跟踪和乐观锁上下文，使单表与多表聚合共享同一套生命周期入口，同时把从表同步
-  保留为业务适配器的明确责任。
-- 让仓储生命周期入口可被 Spring CGLIB 正确代理，并由框架统一翻译已知持久化访问故障。
-- 增加显式 `OutboxTemplate`，支持在应用边界把内部领域事件转换成独立、版本化的集成事件。
-- 修正 PostgreSQL Inbox 幂等处理，以及分布式锁、Outbox、Kafka sender 的自动装配顺序。
-- 补齐非 Web 应用的 Jackson 支持，并让默认 Outbox JSON 不再泄漏 Java 类型元数据。
-- 架构规则现在让 CQRS 检查独立于 Hexagonal 角色，识别能力内嵌的方向包，并防止 Primary 与
-  Secondary Port 让跨方向共享模型归属任一 Port。
-
-这些修复以框架中立契约、运行时适配和业务责任边界为依据，没有为了兼容错误行为保留双轨实现。
-
-### 对 domain-architecture 插件的反哺
-
-插件指导同步补充了以下内容：
-
-- 新项目必须先决定单模块或多模块等项目形态，不能由脚手架隐式决定。
-- Hexagonal、Onion 等架构风格来自前序架构决策，不能把 Hexagonal 当成默认值。
-- jfoundry 始终是可选的框架落地，不影响框架中立的领域建模与架构指导。
-- 聚合 Repository 首先是 DDD 契约；在 Hexagonal 中表达为 Secondary Port 是合理选择，但不是
-  改变其领域身份的强制分类。
-- 补充多表聚合持久化、异常边界、Spring 代理、可移植集成事件 JSON、broker sender 验证，以及
-  Outbox/Inbox 的使用条件和契约转换责任。
-- 只有包内全部类型角色一致时才使用包级架构注解，混合包应拆包或使用类型级注解。
-- Hexagonal 与 Onion 的应用边界都采用能力优先组织；共享应用模型归所属能力所有，不归任一 Port
-  方向、domain 或 infrastructure。
-- Onion 命名应优先来自 DDD 通用语言和实际应用职责；`Reader`、`Store`、`Finder` 等后缀只是
-  可选的项目约定，不是 Onion、DDD 或 jfoundry stereotype。
 
 ### Demo 自身得到的修正
 

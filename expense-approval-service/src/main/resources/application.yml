@@ -8,6 +8,9 @@ spring:
     driver-class-name: org.postgresql.Driver
   flyway:
     enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
   data:
     redis:
       host: ${EXPENSE_APPROVAL_REDIS_HOST:localhost}
@@ -24,10 +27,6 @@ spring:
   mvc:
     problemdetails:
       enabled: true
-
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
 
 springdoc:
   swagger-ui:

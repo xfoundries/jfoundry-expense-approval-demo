@@ -3,6 +3,7 @@ package io.github.xfoundries.demo.expenseapproval.adapter.out.persistence.claim;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -49,6 +50,20 @@ class ExpenseClaimPersistenceTest extends PostgreSqlIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Test
+    void mapsAggregateRootAsJpaEntityWithOptimisticLockVersion() throws Exception {
+        Class<?> entityClass = Class.forName(
+                "io.github.xfoundries.demo.expenseapproval.adapter.out.persistence.claim.ExpenseClaimEntity");
+        Class<?> entityAnnotation = Class.forName("jakarta.persistence.Entity");
+        Class<?> versionAnnotation = Class.forName("jakarta.persistence.Version");
+
+        assertThat(entityClass.isAnnotationPresent(entityAnnotation.asSubclass(java.lang.annotation.Annotation.class)))
+                .isTrue();
+        Field version = entityClass.getDeclaredField("version");
+        assertThat(version.isAnnotationPresent(versionAnnotation.asSubclass(java.lang.annotation.Annotation.class)))
+                .isTrue();
+    }
 
     @Test
     void savesAndRestoresCompleteAggregate() {

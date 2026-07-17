@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = ExpenseApprovalApplication.class)
 @Transactional
-class MybatisApprovedExpenseAmountAdapterTest extends PostgreSqlIntegrationTest {
+class JpaApprovedExpenseAmountAdapterTest extends PostgreSqlIntegrationTest {
 
     @Autowired JdbcTemplate jdbcTemplate;
     @Autowired ApprovedExpenseAmountPort amountPort;

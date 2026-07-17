@@ -45,7 +45,7 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
     }
 
     @Test
-    void failedProjectionRollsBackInboxAndCanBeRetried() throws Exception {
+    void failedProjectionIsRecordedAndCanBeRetried() throws Exception {
         insertApprovedClaim("claim-retry");
         EventEnvelope<ReimbursementPaidV1> event = paidEvent("retry-event", "claim-retry");
         PaymentResultProjector failingProjector = new PaymentResultProjector(
@@ -56,7 +56,10 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
         assertThatThrownBy(() -> failingProjector.projectPaid(event))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("fail once");
-        assertThat(count("jfoundry_inbox_message", "message_id", "retry-event")).isZero();
+        assertThat(count("jfoundry_inbox_message", "message_id", "retry-event")).isOne();
+        assertThat(jdbcTemplate.queryForObject(
+                "select status from jfoundry_inbox_message where message_id = ?",
+                String.class, "retry-event")).isEqualTo("FAILED");
 
         assertThat(projector.projectPaid(event)).isTrue();
         assertThat(count("claim_payment_status", "claim_id", "claim-retry")).isEqualTo(1);

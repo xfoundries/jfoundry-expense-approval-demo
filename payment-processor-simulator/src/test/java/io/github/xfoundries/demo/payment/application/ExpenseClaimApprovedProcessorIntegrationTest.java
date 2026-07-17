@@ -56,7 +56,7 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
     }
 
     @Test
-    void outboxFailureRollsBackInboxAndAllowsRetry() throws Exception {
+    void outboxFailureIsRecordedAndAllowsRetry() throws Exception {
         EventEnvelope<ExpenseClaimApprovedV1> approval = approval("approval-retry", "claim-retry");
         ExpenseClaimApprovedProcessor failingProcessor = new ExpenseClaimApprovedProcessor(
                 inboxTemplate,
@@ -69,7 +69,10 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
         assertThatThrownBy(() -> failingProcessor.process(approval))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("outbox unavailable");
-        assertThat(count("jfoundry_inbox_message", "message_id", "approval-retry")).isZero();
+        assertThat(count("jfoundry_inbox_message", "message_id", "approval-retry")).isOne();
+        assertThat(jdbcTemplate.queryForObject(
+                "select status from jfoundry_inbox_message where message_id = ?",
+                String.class, "approval-retry")).isEqualTo("FAILED");
         assertThat(count("jfoundry_outbox_event", "payload_key", "claim-retry")).isZero();
 
         assertThat(processor.process(approval)).isTrue();
