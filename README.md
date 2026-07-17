@@ -268,52 +268,6 @@ limit.
 - A separately started local environment also completed the entire path from HTTP approval to a
   `PAID` payment projection through real middleware.
 
-### Feedback to jfoundry
-
-Development of the demo exposed and corrected several framework gaps:
-
-- Unified aggregate persistence tracking and optimistic-lock context let single-table and
-  multi-table aggregates share the same lifecycle entry points while keeping dependent-table
-  synchronization an explicit responsibility of the business adapter.
-- Repository lifecycle entry points became proxyable by Spring CGLIB, and the framework now
-  translates known persistence-access failures consistently.
-- An explicit `OutboxTemplate` supports translating internal domain events into independent,
-  versioned integration events at the application boundary.
-- PostgreSQL Inbox idempotency and the auto-configuration order for distributed locks, Outbox, and
-  Kafka senders were corrected.
-- Non-web applications gained Jackson support, and default Outbox JSON no longer leaks Java type
-  metadata.
-- Architecture rules now keep CQRS checks independent of Hexagonal roles, recognize
-  capability-nested direction packages where Hexagonal is selected, and prevent Primary and
-  Secondary Ports from owning models used across the opposite direction.
-
-These changes followed runtime-neutral contracts, runtime adapters, and business responsibility
-boundaries. They did not retain parallel implementations to preserve incorrect behavior.
-
-### Feedback to the Domain Architecture Plugin
-
-The plugin guidance was extended with the following conclusions:
-
-- New projects must decide their project shape, such as single-module or multi-module, instead of
-  letting a scaffold decide implicitly.
-- Hexagonal, Onion, and other architecture styles must come from a prior architecture decision;
-  Hexagonal Architecture is not a default.
-- jfoundry remains an optional framework landing and does not block runtime-neutral domain modeling
-  or architecture guidance.
-- An aggregate Repository is first a DDD contract. Expressing it as a Secondary Port in Hexagonal
-  Architecture is reasonable but does not replace its domain identity with a mandatory category.
-- Guidance now covers multi-table aggregate persistence, exception boundaries, Spring proxies,
-  portable integration-event JSON, broker sender validation, Outbox/Inbox adoption conditions, and
-  contract translation responsibilities.
-- Package-level architecture annotations apply only when every type in the package has the same
-  role. Mixed packages should be split or use type-level annotations.
-- Capability-first organization applies within both Hexagonal and Onion application boundaries;
-  shared application models belong to their capability rather than either Port direction, domain,
-  or infrastructure.
-- Onion names should start from DDD ubiquitous language and actual application responsibilities.
-  `Reader`, `Store`, `Finder`, and similar suffixes are optional project conventions, not Onion,
-  DDD, or jfoundry stereotypes.
-
 ### Corrections in the Demo
 
 The demo evolved from a single-module expense approval project into a four-module project while

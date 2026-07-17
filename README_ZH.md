@@ -242,38 +242,6 @@ curl --fail-with-body -i -X POST http://localhost:8080/api/claims \
 - E2E 覆盖支付成功、支付失败、重复投递、并发月度额度，以及超额回滚且不写 Outbox。
 - 独立启动两个应用和真实中间件后，HTTP 审批到支付状态 `PAID` 的完整链路再次通过。
 
-### 对 jfoundry 的反哺
-
-Demo 开发过程中发现并修正了多项框架能力缺口：
-
-- 统一聚合持久化跟踪和乐观锁上下文，使单表与多表聚合共享同一套生命周期入口，同时把从表同步
-  保留为业务适配器的明确责任。
-- 让仓储生命周期入口可被 Spring CGLIB 正确代理，并由框架统一翻译已知持久化访问故障。
-- 增加显式 `OutboxTemplate`，支持在应用边界把内部领域事件转换成独立、版本化的集成事件。
-- 修正 PostgreSQL Inbox 幂等处理，以及分布式锁、Outbox、Kafka sender 的自动装配顺序。
-- 补齐非 Web 应用的 Jackson 支持，并让默认 Outbox JSON 不再泄漏 Java 类型元数据。
-- 架构规则现在让 CQRS 检查独立于 Hexagonal 角色，在选择 Hexagonal 时识别能力内嵌方向包，并防止
-  Primary 与 Secondary Port 让跨方向共享模型归属任一 Port。
-
-这些修复以框架中立契约、运行时适配和业务责任边界为依据，没有为了兼容错误行为保留双轨实现。
-
-### 对 domain-architecture 插件的反哺
-
-插件指导同步补充了以下内容：
-
-- 新项目必须先决定单模块或多模块等项目形态，不能由脚手架隐式决定。
-- Hexagonal、Onion 等架构风格来自前序架构决策，不能把 Hexagonal 当成默认值。
-- jfoundry 始终是可选的框架落地，不影响框架中立的领域建模与架构指导。
-- 聚合 Repository 首先是 DDD 契约；在 Hexagonal 中表达为 Secondary Port 是合理选择，但不是
-  改变其领域身份的强制分类。
-- 补充多表聚合持久化、异常边界、Spring 代理、可移植集成事件 JSON、broker sender 验证，以及
-  Outbox/Inbox 的使用条件和契约转换责任。
-- 只有包内全部类型角色一致时才使用包级架构注解，混合包应拆包或使用类型级注解。
-- Hexagonal 与 Onion 的应用边界都采用能力优先组织；共享应用模型归所属能力所有，不归任一 Port
-  方向、domain 或 infrastructure。
-- Onion 命名应优先来自 DDD 通用语言和实际应用职责；`Reader`、`Store`、`Finder` 等后缀只是
-  可选的项目约定，不是 Onion、DDD 或 jfoundry stereotype。
-
 ### Demo 自身得到的修正
 
 Demo 从原来的单模块费用审批项目演进为四模块项目，并保持业务逻辑刻意简单。CQRS 没有演变成通用
