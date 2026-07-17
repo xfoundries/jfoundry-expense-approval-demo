@@ -2,7 +2,7 @@
 
 中文 | [English](README.md)
 
-> **当前分支：** 本 README 和当前检出的 `hexagonal/mybatis-plus` 分支描述 Hexagonal Architecture 实现。
+> **当前分支：** 本 README 和当前检出的 `hexagonal/jpa` 分支描述 Hexagonal Architecture 实现。
 > Onion Simple 实现单独维护在
 > [`onion-architecture`](https://github.com/xfoundries/jfoundry-expense-approval-demo/tree/onion-architecture) 分支。
 
