@@ -3,9 +3,9 @@ package io.github.xfoundries.demo.expenseapproval.domain.model;
 import java.time.Instant;
 import java.util.Objects;
 
-import org.jfoundry.domain.event.AbstractDomainEvent;
+import org.jfoundry.domain.event.BaseDomainEvent;
 
-public final class ExpenseClaimApproved extends AbstractDomainEvent {
+public final class ExpenseClaimApproved extends BaseDomainEvent {
 
     private final ExpenseClaimId claimId;
     private final UserId claimantId;
