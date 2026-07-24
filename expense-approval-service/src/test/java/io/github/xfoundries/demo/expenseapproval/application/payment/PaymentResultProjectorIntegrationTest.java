@@ -9,7 +9,6 @@ import io.github.xfoundries.demo.expenseapproval.application.payment.port.out.Pa
 import io.github.xfoundries.demo.expenseapproval.boot.ExpenseApprovalApplication;
 import io.github.xfoundries.demo.expenseapproval.support.PostgreSqlIntegrationTest;
 import org.jfoundry.application.inbox.InboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,7 +24,6 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
 
     @Autowired PaymentResultProjector projector;
     @Autowired InboxTemplate inboxTemplate;
-    @Autowired TransactionRunner transactions;
     @Autowired PaymentStatusProjectionPort projectionPort;
     @Autowired JdbcTemplate jdbcTemplate;
 
@@ -49,7 +47,7 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
         insertApprovedClaim("claim-retry");
         EventEnvelope<ReimbursementPaidV1> event = paidEvent("retry-event", "claim-retry");
         PaymentResultProjector failingProjector = new PaymentResultProjector(
-                inboxTemplate, transactions, projection -> {
+                inboxTemplate, projection -> {
                     throw new IllegalStateException("fail once");
                 });
 

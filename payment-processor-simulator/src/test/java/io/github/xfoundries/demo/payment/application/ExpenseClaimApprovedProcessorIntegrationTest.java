@@ -15,7 +15,6 @@ import org.jfoundry.application.outbox.OutboxMessage;
 import org.jfoundry.application.outbox.OutboxMessageStatus;
 import org.jfoundry.application.outbox.OutboxMessageStore;
 import org.jfoundry.application.outbox.OutboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,7 +40,6 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
 
     @Autowired ExpenseClaimApprovedProcessor processor;
     @Autowired InboxTemplate inboxTemplate;
-    @Autowired TransactionRunner transactions;
     @Autowired JdbcTemplate jdbcTemplate;
 
     @Test
@@ -60,7 +58,6 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
         EventEnvelope<ExpenseClaimApprovedV1> approval = approval("approval-retry", "claim-retry");
         ExpenseClaimApprovedProcessor failingProcessor = new ExpenseClaimApprovedProcessor(
                 inboxTemplate,
-                transactions,
                 new OutboxTemplate(new FailingOutboxStore(), payload -> "{}"),
                 new PaymentRule(new BigDecimal("8000.00"), "CNY"),
                 Clock.fixed(NOW, ZoneOffset.UTC),
