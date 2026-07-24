@@ -47,7 +47,7 @@ unconditionally start the complete container topology.
 
 ## Architecture and Technology (`main`: Hexagonal)
 
-- Java 21, Maven, Spring Boot 3.5.16, jfoundry 1.0.0-SNAPSHOT
+- Java 25, Maven, Spring Boot 3.5.16, jfoundry 1.0.0-SNAPSHOT
 - MyBatis-Plus, PostgreSQL 17, Flyway
 - Kafka, Redis/Redisson, Testcontainers
 - JUnit 5, ArchUnit, Awaitility
@@ -119,7 +119,7 @@ not exceed `8,000.00 CNY`; larger payments return a deterministic failure result
 
 ## Prerequisites
 
-- JDK 21
+- JDK 25
 - Maven 3.9+
 - Docker; container tests start two PostgreSQL instances, Kafka, and Redis
 - Local jfoundry source at `/Users/huangxiao/Workspace/mine/jfoundry`
@@ -241,7 +241,7 @@ or `FAILED`.
 
 ### Current Branch Assessment
 
-Within the selected Java 21, Spring Boot, MyBatis-Plus, PostgreSQL, Kafka, and Redis stack, this demo
+Within the selected Java 25, Spring Boot, MyBatis-Plus, PostgreSQL, Kafka, and Redis stack, this demo
 currently uses Hexagonal Architecture on `main`. This branch proves that the `domain-architecture`
 plugin and optional jfoundry support can guide an AI agent from business requirements and domain
 modeling through a Hexagonal architecture decision, domain implementation, CQRS, Outbox, Inbox,
@@ -262,7 +262,7 @@ limit.
 
 ### Cross-Variant Validation Evidence
 
-- jfoundry completed two 67-module test matrices on Java 21 and Java 25.
+- jfoundry uses Java 25 as its release baseline and passed its Java 25 CI test matrix.
 - Every plugin skill, the Codex plugin manifest, and the Claude marketplace metadata passed
   validation.
 - Both architecture variants passed the same complete automated suite, including all five

@@ -41,7 +41,7 @@ jfoundry-expense-approval-demo/
 
 ## 架构与技术（`main`：Hexagonal）
 
-- Java 21、Maven、Spring Boot 3.5.16、jfoundry 1.0.0-SNAPSHOT
+- Java 25、Maven、Spring Boot 3.5.16、jfoundry 1.0.0-SNAPSHOT
 - MyBatis-Plus、PostgreSQL 17、Flyway
 - Kafka、Redis/Redisson、Testcontainers
 - JUnit 5、ArchUnit、Awaitility
@@ -105,7 +105,7 @@ HTTP 命令
 
 ## 前置条件
 
-- JDK 21
+- JDK 25
 - Maven 3.9+
 - Docker 可用；容器测试会启动两个 PostgreSQL、Kafka 和 Redis
 - 本地 jfoundry 源码位于 `/Users/huangxiao/Workspace/mine/jfoundry`
@@ -220,7 +220,7 @@ curl --fail-with-body -i -X POST http://localhost:8080/api/claims \
 
 ### 当前分支判断
 
-在 Java 21、Spring Boot、MyBatis-Plus、PostgreSQL、Kafka 和 Redis 这一已选技术栈内，本 Demo
+在 Java 25、Spring Boot、MyBatis-Plus、PostgreSQL、Kafka 和 Redis 这一已选技术栈内，本 Demo
 当前在 `main` 使用 Hexagonal Architecture。本分支证明 `domain-architecture` 插件与可选的
 jfoundry 可以支撑 AI Agent 从业务需求、领域建模和 Hexagonal 架构决策，一直完成领域实现、
 CQRS、Outbox、Inbox、分布式锁、持久化和端到端验收。
@@ -237,7 +237,7 @@ CQRS、Outbox、Inbox、分布式锁、持久化和端到端验收。
 
 ### 跨变体验证证据
 
-- jfoundry 在 Java 21 和 Java 25 下完成两套 67 模块测试矩阵。
+- jfoundry 以 Java 25 作为发布基线，并已通过 Java 25 CI 测试矩阵。
 - `domain-architecture` 插件的全部 skill、Codex plugin manifest 和 Claude marketplace 通过校验。
 - 两个架构变体均通过同一套完整自动化测试，其中完整容器 E2E 为 `5/5`。
 - Onion 验证覆盖显式 Domain、Application、Infrastructure Ring、向内依赖规则、DDD Repository
