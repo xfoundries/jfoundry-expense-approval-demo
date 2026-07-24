@@ -3,7 +3,6 @@ package io.github.xfoundries.demo.expenseapproval.application.claim.command.hand
 import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalRole;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.ReopenExpenseClaimCommand;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
-import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class ReopenExpenseClaimCommandHandler {
@@ -15,11 +14,13 @@ public class ReopenExpenseClaimCommandHandler {
     }
 
     @CommandHandler
-    @ApplicationTransactional
     public void reopen(ReopenExpenseClaimCommand command) {
-        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = support.load(command.claimId());
-        claim.reopen(command.actor().userId(), support.now());
-        support.save(claim);
+        support.inTransaction(() -> {
+            support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+            ExpenseClaim claim = support.load(command.claimId());
+            claim.reopen(command.actor().userId(), support.now());
+            support.save(claim);
+            return null;
+        });
     }
 }

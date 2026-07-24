@@ -12,7 +12,6 @@ import io.github.xfoundries.demo.expenseapproval.application.claim.command.Reope
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.SubmitExpenseClaimCommand;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.UpdateExpenseItemCommand;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.WithdrawExpenseClaimCommand;
-import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.Command;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,31 +23,29 @@ class CommandHandlerStructureTest {
 
     @ParameterizedTest
     @MethodSource("handlerCases")
-    void eachCommandHasOneTransactionalBusinessActionHandler(HandlerCase handlerCase) throws Exception {
+    void eachCommandHasOneBusinessActionHandler(HandlerCase handlerCase) throws Exception {
         assertThat(handlerCase.commandType()).hasAnnotation(Command.class);
         Method action = handlerCase.handlerType().getDeclaredMethod(
                 handlerCase.actionMethod(), handlerCase.commandType());
         assertThat(action.isAnnotationPresent(CommandHandler.class)).isTrue();
-        assertThat(action.isAnnotationPresent(ApplicationTransactional.class))
-                .isEqualTo(handlerCase.transactional());
     }
 
     private static Stream<HandlerCase> handlerCases() {
         return Stream.of(
-                new HandlerCase(AddExpenseItemCommand.class, AddExpenseItemCommandHandler.class, "addItem", true),
-                new HandlerCase(UpdateExpenseItemCommand.class, UpdateExpenseItemCommandHandler.class, "updateItem", true),
-                new HandlerCase(RemoveExpenseItemCommand.class, RemoveExpenseItemCommandHandler.class, "removeItem", true),
-                new HandlerCase(SubmitExpenseClaimCommand.class, SubmitExpenseClaimCommandHandler.class, "submit", true),
+                new HandlerCase(AddExpenseItemCommand.class, AddExpenseItemCommandHandler.class, "addItem"),
+                new HandlerCase(UpdateExpenseItemCommand.class, UpdateExpenseItemCommandHandler.class, "updateItem"),
+                new HandlerCase(RemoveExpenseItemCommand.class, RemoveExpenseItemCommandHandler.class, "removeItem"),
+                new HandlerCase(SubmitExpenseClaimCommand.class, SubmitExpenseClaimCommandHandler.class, "submit"),
                 new HandlerCase(ApproveExpenseClaimByManagerCommand.class,
-                        ApproveExpenseClaimByManagerCommandHandler.class, "approveByManager", false),
+                        ApproveExpenseClaimByManagerCommandHandler.class, "approveByManager"),
                 new HandlerCase(ApproveExpenseClaimByFinanceCommand.class,
-                        ApproveExpenseClaimByFinanceCommandHandler.class, "approveByFinance", false),
-                new HandlerCase(RejectExpenseClaimCommand.class, RejectExpenseClaimCommandHandler.class, "reject", true),
-                new HandlerCase(ReopenExpenseClaimCommand.class, ReopenExpenseClaimCommandHandler.class, "reopen", true),
-                new HandlerCase(WithdrawExpenseClaimCommand.class, WithdrawExpenseClaimCommandHandler.class, "withdraw", true));
+                        ApproveExpenseClaimByFinanceCommandHandler.class, "approveByFinance"),
+                new HandlerCase(RejectExpenseClaimCommand.class, RejectExpenseClaimCommandHandler.class, "reject"),
+                new HandlerCase(ReopenExpenseClaimCommand.class, ReopenExpenseClaimCommandHandler.class, "reopen"),
+                new HandlerCase(WithdrawExpenseClaimCommand.class, WithdrawExpenseClaimCommandHandler.class, "withdraw"));
     }
 
     private record HandlerCase(
-            Class<?> commandType, Class<?> handlerType, String actionMethod, boolean transactional) {
+            Class<?> commandType, Class<?> handlerType, String actionMethod) {
     }
 }

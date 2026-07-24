@@ -13,7 +13,9 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
 import io.github.xfoundries.demo.expenseapproval.domain.model.UserId;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
-import org.jfoundry.application.transaction.ApplicationTransactional;
+import org.jfoundry.application.transaction.TransactionCallback;
+import org.jfoundry.application.transaction.TransactionOptions;
+import org.jfoundry.application.transaction.TransactionRunner;
 import org.jfoundry.architecture.cqrs.Command;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 import org.junit.jupiter.api.Test;
@@ -39,13 +41,13 @@ class CreateExpenseClaimCommandHandlerTest {
         Method create = CreateExpenseClaimCommandHandler.class
                 .getDeclaredMethod("create", CreateExpenseClaimCommand.class);
         assertThat(create.isAnnotationPresent(CommandHandler.class)).isTrue();
-        assertThat(create.isAnnotationPresent(ApplicationTransactional.class)).isTrue();
     }
 
     @Test
-    void createsAndSavesDraftOwnedByEmployee() {
+    void createsAndSavesDraftOwnedByEmployeeInsideAnExplicitTransaction() {
+        RecordingTransactionRunner transactions = new RecordingTransactionRunner();
         CreateExpenseClaimCommandHandler handler = new CreateExpenseClaimCommandHandler(
-                repository, Clock.fixed(NOW, ZoneOffset.UTC));
+                repository, Clock.fixed(NOW, ZoneOffset.UTC), transactions);
         ApprovalActor employee = new ApprovalActor(UserId.of("employee-1"), ApprovalRole.EMPLOYEE);
 
         ExpenseClaimId id = handler.create(new CreateExpenseClaimCommand(employee, "Customer visit"));
@@ -55,5 +57,17 @@ class CreateExpenseClaimCommandHandlerTest {
         assertThat(captor.getValue().id()).isEqualTo(id);
         assertThat(captor.getValue().claimant()).isEqualTo(employee.userId());
         assertThat(captor.getValue().state()).isEqualTo(ClaimState.DRAFT);
+        assertThat(transactions.calls).isEqualTo(1);
+    }
+
+    private static final class RecordingTransactionRunner implements TransactionRunner {
+
+        private int calls;
+
+        @Override
+        public <T> T call(TransactionOptions options, TransactionCallback<T> callback) throws Exception {
+            calls++;
+            return callback.execute();
+        }
     }
 }

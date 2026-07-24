@@ -3,7 +3,6 @@ package io.github.xfoundries.demo.expenseapproval.application.claim.command.hand
 import io.github.xfoundries.demo.expenseapproval.application.identity.ApprovalRole;
 import io.github.xfoundries.demo.expenseapproval.application.claim.command.RemoveExpenseItemCommand;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
-import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class RemoveExpenseItemCommandHandler {
@@ -15,11 +14,13 @@ public class RemoveExpenseItemCommandHandler {
     }
 
     @CommandHandler
-    @ApplicationTransactional
     public void removeItem(RemoveExpenseItemCommand command) {
-        support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
-        ExpenseClaim claim = support.load(command.claimId());
-        claim.removeItem(command.actor().userId(), command.itemId(), support.now());
-        support.save(claim);
+        support.inTransaction(() -> {
+            support.requireRole(command.actor(), ApprovalRole.EMPLOYEE);
+            ExpenseClaim claim = support.load(command.claimId());
+            claim.removeItem(command.actor().userId(), command.itemId(), support.now());
+            support.save(claim);
+            return null;
+        });
     }
 }

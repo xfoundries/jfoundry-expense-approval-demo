@@ -9,7 +9,6 @@ import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentStat
 import io.github.xfoundries.demo.expenseapproval.boot.ExpenseApprovalApplication;
 import io.github.xfoundries.demo.expenseapproval.support.PostgreSqlIntegrationTest;
 import org.jfoundry.application.inbox.InboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,7 +24,6 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
 
     @Autowired PaymentResultProjector projector;
     @Autowired InboxTemplate inboxTemplate;
-    @Autowired TransactionRunner transactions;
     @Autowired PaymentStatusProjectionStore projectionStore;
     @Autowired JdbcTemplate jdbcTemplate;
 
@@ -45,18 +43,21 @@ class PaymentResultProjectorIntegrationTest extends PostgreSqlIntegrationTest {
     }
 
     @Test
-    void failedProjectionRollsBackInboxAndCanBeRetried() throws Exception {
+    void failedProjectionIsRecordedAndCanBeRetried() throws Exception {
         insertApprovedClaim("claim-retry");
         EventEnvelope<ReimbursementPaidV1> event = paidEvent("retry-event", "claim-retry");
         PaymentResultProjector failingProjector = new PaymentResultProjector(
-                inboxTemplate, transactions, projection -> {
+                inboxTemplate, projection -> {
                     throw new IllegalStateException("fail once");
                 });
 
         assertThatThrownBy(() -> failingProjector.projectPaid(event))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("fail once");
-        assertThat(count("jfoundry_inbox_message", "message_id", "retry-event")).isZero();
+        assertThat(count("jfoundry_inbox_message", "message_id", "retry-event")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "select status from jfoundry_inbox_message where message_id = ?",
+                String.class, "retry-event")).isEqualTo("FAILED");
 
         assertThat(projector.projectPaid(event)).isTrue();
         assertThat(count("claim_payment_status", "claim_id", "claim-retry")).isEqualTo(1);

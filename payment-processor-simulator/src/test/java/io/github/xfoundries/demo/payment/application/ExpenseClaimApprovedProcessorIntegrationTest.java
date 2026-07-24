@@ -15,7 +15,6 @@ import org.jfoundry.application.outbox.OutboxMessage;
 import org.jfoundry.application.outbox.OutboxMessageStatus;
 import org.jfoundry.application.outbox.OutboxMessageStore;
 import org.jfoundry.application.outbox.OutboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,7 +40,6 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
 
     @Autowired ExpenseClaimApprovedProcessor processor;
     @Autowired InboxTemplate inboxTemplate;
-    @Autowired TransactionRunner transactions;
     @Autowired JdbcTemplate jdbcTemplate;
 
     @Test
@@ -56,11 +54,10 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
     }
 
     @Test
-    void outboxFailureRollsBackInboxAndAllowsRetry() throws Exception {
+    void outboxFailureIsRecordedAndAllowsRetry() throws Exception {
         EventEnvelope<ExpenseClaimApprovedV1> approval = approval("approval-retry", "claim-retry");
         ExpenseClaimApprovedProcessor failingProcessor = new ExpenseClaimApprovedProcessor(
                 inboxTemplate,
-                transactions,
                 new OutboxTemplate(new FailingOutboxStore(), payload -> "{}"),
                 new PaymentRule(new BigDecimal("8000.00"), "CNY"),
                 Clock.fixed(NOW, ZoneOffset.UTC),
@@ -69,7 +66,10 @@ class ExpenseClaimApprovedProcessorIntegrationTest {
         assertThatThrownBy(() -> failingProcessor.process(approval))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("outbox unavailable");
-        assertThat(count("jfoundry_inbox_message", "message_id", "approval-retry")).isZero();
+        assertThat(count("jfoundry_inbox_message", "message_id", "approval-retry")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "select status from jfoundry_inbox_message where message_id = ?",
+                String.class, "approval-retry")).isEqualTo("FAILED");
         assertThat(count("jfoundry_outbox_event", "payload_key", "claim-retry")).isZero();
 
         assertThat(processor.process(approval)).isTrue();

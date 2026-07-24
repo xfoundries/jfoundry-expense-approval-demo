@@ -7,22 +7,18 @@ import io.github.xfoundries.demo.contracts.ReimbursementPaidV1;
 import io.github.xfoundries.demo.contracts.ReimbursementPaymentFailedV1;
 import io.github.xfoundries.demo.expenseapproval.application.payment.PaymentStatusProjectionStore.PaymentStatusProjection;
 import org.jfoundry.application.inbox.InboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 
 public class PaymentResultProjector {
 
     public static final String CONSUMER_NAME = "expense-approval.payment-result-projector.v1";
 
     private final InboxTemplate inboxTemplate;
-    private final TransactionRunner transactions;
     private final PaymentStatusProjectionStore projectionStore;
 
     public PaymentResultProjector(
             InboxTemplate inboxTemplate,
-            TransactionRunner transactions,
             PaymentStatusProjectionStore projectionStore) {
         this.inboxTemplate = Objects.requireNonNull(inboxTemplate);
-        this.transactions = Objects.requireNonNull(transactions);
         this.projectionStore = Objects.requireNonNull(projectionStore);
     }
 
@@ -41,7 +37,7 @@ public class PaymentResultProjector {
     }
 
     private boolean project(String eventId, PaymentStatusProjection projection) throws Exception {
-        return transactions.call(() -> inboxTemplate.executeOnce(
-                eventId, CONSUMER_NAME, () -> projectionStore.upsert(projection)));
+        return inboxTemplate.executeOnce(
+                eventId, CONSUMER_NAME, () -> projectionStore.upsert(projection));
     }
 }

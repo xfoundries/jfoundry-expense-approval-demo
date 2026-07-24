@@ -10,7 +10,6 @@ import io.github.xfoundries.demo.payment.application.ExpenseClaimApprovedProcess
 import io.github.xfoundries.demo.payment.application.PaymentRule;
 import org.jfoundry.application.inbox.InboxTemplate;
 import org.jfoundry.application.outbox.OutboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,13 +31,11 @@ public class PaymentSimulatorConfiguration {
     @Bean
     ExpenseClaimApprovedProcessor expenseClaimApprovedProcessor(
             InboxTemplate inboxTemplate,
-            TransactionRunner transactions,
             OutboxTemplate outboxTemplate,
             PaymentRule paymentRule,
             Clock paymentClock) {
         return new ExpenseClaimApprovedProcessor(
                 inboxTemplate,
-                transactions,
                 outboxTemplate,
                 paymentRule,
                 paymentClock,

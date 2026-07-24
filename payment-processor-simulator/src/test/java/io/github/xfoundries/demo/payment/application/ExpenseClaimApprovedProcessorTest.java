@@ -37,8 +37,7 @@ class ExpenseClaimApprovedProcessorTest {
         }
     };
     private final ExpenseClaimApprovedProcessor processor = new ExpenseClaimApprovedProcessor(
-            new InboxTemplate(inboxStore),
-            transactions,
+            new InboxTemplate(inboxStore, transactions),
             outboxTemplate,
             new PaymentRule(new BigDecimal("8000.00"), "CNY"),
             Clock.fixed(NOW, ZoneOffset.UTC),
