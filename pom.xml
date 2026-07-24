@@ -26,8 +26,8 @@
     </profiles>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jfoundry.version>1.0.0-SNAPSHOT</jfoundry.version>
         <spring-boot.version>3.5.16</spring-boot.version>
