@@ -33,7 +33,7 @@ class PaymentResultProjectorTest {
         }
     };
     private final PaymentResultProjector projector = new PaymentResultProjector(
-            new InboxTemplate(inboxStore), transactions, projectionPort);
+            new InboxTemplate(inboxStore, transactions), projectionPort);
 
     @Test
     void projectsPaidEventOnlyOnce() throws Exception {

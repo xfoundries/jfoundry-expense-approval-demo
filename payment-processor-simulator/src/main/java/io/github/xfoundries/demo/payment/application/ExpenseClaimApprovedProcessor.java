@@ -12,7 +12,6 @@ import io.github.xfoundries.demo.contracts.ReimbursementPaymentFailedV1;
 import org.jfoundry.application.inbox.InboxTemplate;
 import org.jfoundry.application.outbox.OutboxAppendRequest;
 import org.jfoundry.application.outbox.OutboxTemplate;
-import org.jfoundry.application.transaction.TransactionRunner;
 
 public final class ExpenseClaimApprovedProcessor {
 
@@ -21,7 +20,6 @@ public final class ExpenseClaimApprovedProcessor {
     private static final String RESULT_TOPIC = "payment.events.v1";
 
     private final InboxTemplate inboxTemplate;
-    private final TransactionRunner transactions;
     private final OutboxTemplate outboxTemplate;
     private final PaymentRule paymentRule;
     private final Clock clock;
@@ -29,13 +27,11 @@ public final class ExpenseClaimApprovedProcessor {
 
     public ExpenseClaimApprovedProcessor(
             InboxTemplate inboxTemplate,
-            TransactionRunner transactions,
             OutboxTemplate outboxTemplate,
             PaymentRule paymentRule,
             Clock clock,
             Supplier<String> eventIds) {
         this.inboxTemplate = Objects.requireNonNull(inboxTemplate);
-        this.transactions = Objects.requireNonNull(transactions);
         this.outboxTemplate = Objects.requireNonNull(outboxTemplate);
         this.paymentRule = Objects.requireNonNull(paymentRule);
         this.clock = Objects.requireNonNull(clock);
@@ -44,8 +40,8 @@ public final class ExpenseClaimApprovedProcessor {
 
     public boolean process(EventEnvelope<ExpenseClaimApprovedV1> approval) throws Exception {
         Objects.requireNonNull(approval);
-        return transactions.call(() -> inboxTemplate.executeOnce(
-                approval.eventId(), CONSUMER_NAME, () -> appendPaymentResult(approval)));
+        return inboxTemplate.executeOnce(
+                approval.eventId(), CONSUMER_NAME, () -> appendPaymentResult(approval));
     }
 
     private void appendPaymentResult(EventEnvelope<ExpenseClaimApprovedV1> approval) {

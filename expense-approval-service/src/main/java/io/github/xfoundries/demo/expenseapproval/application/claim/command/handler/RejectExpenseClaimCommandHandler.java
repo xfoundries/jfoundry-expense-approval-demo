@@ -7,7 +7,6 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.ClaimState;
 import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaim;
 import io.github.xfoundries.demo.expenseapproval.domain.model.RejectionReason;
 import org.jfoundry.application.exception.InvalidArgumentException;
-import org.jfoundry.application.transaction.ApplicationTransactional;
 import org.jfoundry.architecture.cqrs.CommandHandler;
 
 public class RejectExpenseClaimCommandHandler implements RejectExpenseClaimUseCase {
@@ -20,14 +19,16 @@ public class RejectExpenseClaimCommandHandler implements RejectExpenseClaimUseCa
 
     @Override
     @CommandHandler
-    @ApplicationTransactional
     public void reject(RejectExpenseClaimCommand command) {
-        ExpenseClaim claim = support.load(command.claimId());
-        ApprovalRole requiredRole = requiredRole(claim.state());
-        support.requireRole(command.actor(), requiredRole);
-        claim.reject(
-                command.actor().userId(), RejectionReason.of(command.reason()), support.now());
-        support.save(claim);
+        support.inTransaction(() -> {
+            ExpenseClaim claim = support.load(command.claimId());
+            ApprovalRole requiredRole = requiredRole(claim.state());
+            support.requireRole(command.actor(), requiredRole);
+            claim.reject(
+                    command.actor().userId(), RejectionReason.of(command.reason()), support.now());
+            support.save(claim);
+            return null;
+        });
     }
 
     private static ApprovalRole requiredRole(ClaimState state) {

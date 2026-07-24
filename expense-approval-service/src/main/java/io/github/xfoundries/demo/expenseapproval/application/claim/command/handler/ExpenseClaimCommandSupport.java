@@ -10,15 +10,21 @@ import io.github.xfoundries.demo.expenseapproval.domain.model.ExpenseClaimId;
 import io.github.xfoundries.demo.expenseapproval.domain.repository.ExpenseClaimRepository;
 import org.jfoundry.application.exception.InvalidArgumentException;
 import org.jfoundry.application.exception.NotFoundException;
+import org.jfoundry.application.exception.ExternalAccessException;
+import org.jfoundry.application.transaction.TransactionCallback;
+import org.jfoundry.application.transaction.TransactionRunner;
 
 public final class ExpenseClaimCommandSupport {
 
     private final ExpenseClaimRepository repository;
     private final Clock clock;
+    private final TransactionRunner transactions;
 
-    public ExpenseClaimCommandSupport(ExpenseClaimRepository repository, Clock clock) {
+    public ExpenseClaimCommandSupport(
+            ExpenseClaimRepository repository, Clock clock, TransactionRunner transactions) {
         this.repository = repository;
         this.clock = clock;
+        this.transactions = transactions;
     }
 
     ExpenseClaim load(ExpenseClaimId id) {
@@ -41,5 +47,15 @@ public final class ExpenseClaimCommandSupport {
 
     void save(ExpenseClaim claim) {
         repository.modify(claim);
+    }
+
+    <T> T inTransaction(TransactionCallback<T> callback) {
+        try {
+            return transactions.call(callback);
+        } catch (RuntimeException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new ExternalAccessException("Expense claim transaction failed", exception);
+        }
     }
 }

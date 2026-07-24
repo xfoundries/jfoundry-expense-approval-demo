@@ -43,14 +43,14 @@ public class ApplicationConfiguration {
 
     @Bean
     ExpenseClaimCommandSupport expenseClaimCommandSupport(
-            ExpenseClaimRepository repository, Clock applicationClock) {
-        return new ExpenseClaimCommandSupport(repository, applicationClock);
+            ExpenseClaimRepository repository, Clock applicationClock, TransactionRunner transactionRunner) {
+        return new ExpenseClaimCommandSupport(repository, applicationClock, transactionRunner);
     }
 
     @Bean
     CreateExpenseClaimCommandHandler createExpenseClaimCommandHandler(
-            ExpenseClaimRepository repository, Clock applicationClock) {
-        return new CreateExpenseClaimCommandHandler(repository, applicationClock);
+            ExpenseClaimRepository repository, Clock applicationClock, TransactionRunner transactionRunner) {
+        return new CreateExpenseClaimCommandHandler(repository, applicationClock, transactionRunner);
     }
 
     @Bean
@@ -129,8 +129,7 @@ public class ApplicationConfiguration {
     @Bean
     PaymentResultProjector paymentResultProjector(
             InboxTemplate inboxTemplate,
-            TransactionRunner transactionRunner,
             PaymentStatusProjectionPort projectionPort) {
-        return new PaymentResultProjector(inboxTemplate, transactionRunner, projectionPort);
+        return new PaymentResultProjector(inboxTemplate, projectionPort);
     }
 }
